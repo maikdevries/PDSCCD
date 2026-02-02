@@ -1,2 +1,5 @@
 # Ignore macOS directory configuration files
 .DS_Store
+
+# Ignore Cargo build artefacts
+target/
