@@ -1,3 +1,4 @@
+#[derive(Clone)]
 struct Node {
     id: usize,
     neighbours: Vec<usize>,
@@ -20,6 +21,46 @@ impl Graph {
                 .into_iter()
                 .enumerate()
                 .map(|(id, neighbours)| Node::new(id, neighbours))
+                .collect(),
+        }
+    }
+
+    fn induce(&self, s: usize) -> Self {
+        Self {
+            nodes: self
+                .nodes
+                .iter()
+                .filter(|node| node.id >= s)
+                .map(|node| {
+                    Node::new(
+                        node.id,
+                        node.neighbours
+                            .iter()
+                            .filter(|&&id| id >= s)
+                            .copied()
+                            .collect(),
+                    )
+                })
+                .collect(),
+        }
+    }
+
+    fn subgraph(&self, nodes: &Vec<usize>) -> Self {
+        Self {
+            nodes: self
+                .nodes
+                .iter()
+                .filter(|node| nodes.contains(&node.id))
+                .map(|node| {
+                    Node::new(
+                        node.id,
+                        node.neighbours
+                            .iter()
+                            .filter(|id| nodes.contains(id))
+                            .copied()
+                            .collect(),
+                    )
+                })
                 .collect(),
         }
     }
@@ -55,7 +96,17 @@ impl Johnson {
 
     fn detect(&mut self) {
         while self.s < self.n {
-            // [TODO] Compute strongest connected component of subgraph G induced by { s, s + 1, ..., n }
+            // [NOTE] Compute strongest connected component of subgraph G induced by { s, s + 1, ..., n }
+            self.subgraph = {
+                let components = Tarjan::new(self.subgraph.induce(self.s)).detect();
+                let component = components.iter().min_by_key(|c| c.iter().min());
+
+                if let Some(scc) = component {
+                    self.subgraph.subgraph(scc)
+                } else {
+                    Graph::new(Vec::new())
+                }
+            };
 
             if let Some(node) = self.subgraph.nodes.first() {
                 self.s = node.id;
@@ -117,6 +168,72 @@ impl Johnson {
                 self.blocked[w] = false;
                 stack.extend(self.B[w].drain(..));
             }
+        }
+    }
+}
+
+struct Tarjan {
+    components: Vec<Vec<usize>>,
+    i: usize,
+    lowlink: Vec<usize>,
+    number: Vec<usize>,
+    stack: Vec<usize>,
+    subgraph: Graph,
+}
+
+impl Tarjan {
+    fn new(graph: Graph) -> Self {
+        Self {
+            components: Vec::new(),
+            i: 0,
+            lowlink: vec![0; graph.nodes.len()],
+            number: vec![0; graph.nodes.len()],
+            stack: Vec::new(),
+            subgraph: graph,
+        }
+    }
+
+    fn detect(&mut self) -> Vec<Vec<usize>> {
+        for w in self.subgraph.nodes.clone() {
+            if self.number[w.id] == 0 {
+                self.strong_connect(w.id);
+            }
+        }
+
+        return self.components.clone();
+    }
+
+    fn strong_connect(&mut self, v: usize) {
+        self.i += 1;
+        self.lowlink[v] = self.i;
+        self.number[v] = self.i;
+
+        self.stack.push(v);
+
+        let neighbours = self.subgraph.nodes[v].neighbours.clone();
+
+        for w in neighbours {
+            if self.number[w] == 0 {
+                // (v, w) is a tree arc
+                self.strong_connect(w);
+                self.lowlink[v] = self.lowlink[v].min(self.lowlink[w]);
+            } else if self.number[w] < self.number[v] {
+                // (v, w) is a frond or cross-link
+                if self.stack.contains(&w) {
+                    self.lowlink[v] = self.lowlink[v].min(self.number[w]);
+                }
+            }
+        }
+
+        if self.lowlink[v] == self.number[v] {
+            // v is the root of a component
+            let mut scc = Vec::new();
+
+            while let Some(w) = self.stack.pop_if(|w| self.number[*w] >= self.number[v]) {
+                scc.push(w);
+            }
+
+            self.components.push(scc);
         }
     }
 }
