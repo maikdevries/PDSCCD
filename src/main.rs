@@ -1,81 +1,47 @@
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+
 #[derive(Clone)]
 struct Node {
     id: usize,
-    neighbours: Vec<usize>,
-}
-
-impl Node {
-    fn new(id: usize, neighbours: Vec<usize>) -> Self {
-        Self { id, neighbours }
-    }
+    neighbours: BTreeSet<usize>,
 }
 
 struct Graph {
-    nodes: Vec<Node>,
+    nodes: BTreeMap<usize, Node>,
 }
 
 impl Graph {
-    fn new(adjacency: Vec<Vec<usize>>) -> Self {
+    fn new(adjacency: Vec<Node>) -> Self {
         Self {
-            nodes: adjacency
-                .into_iter()
-                .enumerate()
-                .map(|(id, neighbours)| Node::new(id, neighbours))
-                .collect(),
+            nodes: adjacency.into_iter().map(|node| (node.id, node)).collect(),
         }
     }
 
     fn induce(&self, s: usize) -> Self {
-        Self {
-            nodes: self
-                .nodes
-                .iter()
-                .filter(|node| node.id >= s)
-                .map(|node| {
-                    Node::new(
-                        node.id,
-                        node.neighbours
-                            .iter()
-                            .filter(|&&id| id >= s)
-                            .copied()
-                            .collect(),
-                    )
-                })
-                .collect(),
+        let mut nodes = self.nodes.clone().split_off(&s);
+
+        for node in nodes.values_mut() {
+            node.neighbours = node.neighbours.split_off(&s);
         }
+
+        Self { nodes }
     }
 
-    fn subgraph(&self, nodes: &Vec<usize>) -> Self {
-        Self {
-            nodes: self
-                .nodes
-                .iter()
-                .filter(|node| nodes.contains(&node.id))
-                .map(|node| {
-                    Node::new(
-                        node.id,
-                        node.neighbours
-                            .iter()
-                            .filter(|id| nodes.contains(id))
-                            .copied()
-                            .collect(),
-                    )
-                })
-                .collect(),
-        }
+    fn subgraph(&self, subset: &Vec<usize>) -> Self {
+        let mut nodes = self.nodes.clone();
+
+        nodes.retain(|id, node| {
+            node.neighbours.retain(|id| subset.contains(id));
+            subset.contains(id)
+        });
+
+        Self { nodes }
     }
-}
-
-fn main() {
-    let graph = Graph::new(vec![vec![1], vec![2], vec![3], vec![4], vec![0]]);
-
-    let mut johnson = Johnson::new(graph);
-    johnson.detect();
 }
 
 struct Johnson {
-    B: Vec<Vec<usize>>,
-    blocked: Vec<bool>,
+    B: HashMap<usize, HashSet<usize>>,
+    blocked: HashSet<usize>,
     n: usize,
     s: usize,
     stack: Vec<usize>,
@@ -85,16 +51,16 @@ struct Johnson {
 impl Johnson {
     fn new(graph: Graph) -> Self {
         Self {
-            B: vec![Vec::new(); graph.nodes.len()],
-            blocked: vec![false; graph.nodes.len()],
+            B: HashMap::new(),
+            blocked: HashSet::new(),
             n: graph.nodes.len(),
-            s: 0,
+            s: 1,
             stack: Vec::new(),
             subgraph: graph,
         }
     }
 
-    fn detect(&mut self) {
+    fn detect(mut self) {
         while self.s < self.n {
             // [NOTE] Compute strongest connected component of subgraph G induced by { s, s + 1, ..., n }
             self.subgraph = {
@@ -108,12 +74,12 @@ impl Johnson {
                 }
             };
 
-            if let Some(node) = self.subgraph.nodes.first() {
-                self.s = node.id;
+            if let Some((&id, _)) = self.subgraph.nodes.first_key_value() {
+                self.s = id;
 
-                for node in &self.subgraph.nodes {
-                    self.blocked[node.id] = false;
-                    self.B[node.id].clear();
+                for i in self.subgraph.nodes.keys() {
+                    self.blocked.remove(i);
+                    self.B.remove(i);
                 }
 
                 self.circuit(self.s);
@@ -128,18 +94,18 @@ impl Johnson {
         let mut f = false;
 
         self.stack.push(v);
-        self.blocked[v] = true;
+        self.blocked.insert(v);
 
-        let neighbours = self.subgraph.nodes[v].neighbours.clone();
+        let neighbours = self.subgraph.nodes[&v].neighbours.clone();
 
-        for &w in &neighbours {
-            if w == self.s {
+        for w in &neighbours {
+            if *w == self.s {
                 let mut stack = self.stack.clone();
                 stack.push(self.s);
 
                 println!("Cycle found: {stack:?}");
                 f = true;
-            } else if !self.blocked[w] && self.circuit(w) {
+            } else if !self.blocked.contains(w) && self.circuit(*w) {
                 f = true;
             }
         }
@@ -147,10 +113,8 @@ impl Johnson {
         if f {
             self.unblock(v);
         } else {
-            for &w in &neighbours {
-                if !self.B[w].contains(&v) {
-                    self.B[w].push(v);
-                }
+            for w in neighbours {
+                self.B.entry(w).or_insert(HashSet::new()).insert(v);
             }
         }
 
@@ -159,14 +123,13 @@ impl Johnson {
     }
 
     fn unblock(&mut self, u: usize) {
-        self.blocked[u] = false;
+        self.blocked.remove(&u);
 
-        let mut stack: Vec<usize> = self.B[u].drain(..).collect();
+        let mut stack: Vec<usize> = self.B.remove(&u).into_iter().flatten().collect();
 
         while let Some(w) = stack.pop() {
-            if self.blocked[w] {
-                self.blocked[w] = false;
-                stack.extend(self.B[w].drain(..));
+            if self.blocked.remove(&w) {
+                stack.extend(self.B.remove(&w).into_iter().flatten());
             }
         }
     }
@@ -175,8 +138,8 @@ impl Johnson {
 struct Tarjan {
     components: Vec<Vec<usize>>,
     i: usize,
-    lowlink: Vec<usize>,
-    number: Vec<usize>,
+    lowlink: HashMap<usize, usize>,
+    number: HashMap<usize, usize>,
     stack: Vec<usize>,
     subgraph: Graph,
 }
@@ -186,17 +149,17 @@ impl Tarjan {
         Self {
             components: Vec::new(),
             i: 0,
-            lowlink: vec![0; graph.nodes.len()],
-            number: vec![0; graph.nodes.len()],
+            lowlink: HashMap::new(),
+            number: HashMap::new(),
             stack: Vec::new(),
             subgraph: graph,
         }
     }
 
-    fn detect(&mut self) -> Vec<Vec<usize>> {
-        for w in self.subgraph.nodes.clone() {
-            if self.number[w.id] == 0 {
-                self.strong_connect(w.id);
+    fn detect(mut self) -> Vec<Vec<usize>> {
+        for w in self.subgraph.nodes.keys().copied().collect::<Vec<usize>>() {
+            if !self.number.contains_key(&w) {
+                self.strong_connect(w);
             }
         }
 
@@ -205,35 +168,57 @@ impl Tarjan {
 
     fn strong_connect(&mut self, v: usize) {
         self.i += 1;
-        self.lowlink[v] = self.i;
-        self.number[v] = self.i;
+        self.lowlink.insert(v, self.i);
+        self.number.insert(v, self.i);
 
         self.stack.push(v);
 
-        let neighbours = self.subgraph.nodes[v].neighbours.clone();
-
-        for w in neighbours {
-            if self.number[w] == 0 {
-                // (v, w) is a tree arc
+        for w in self.subgraph.nodes[&v].neighbours.clone() {
+            if !self.number.contains_key(&w) {
                 self.strong_connect(w);
-                self.lowlink[v] = self.lowlink[v].min(self.lowlink[w]);
-            } else if self.number[w] < self.number[v] {
-                // (v, w) is a frond or cross-link
-                if self.stack.contains(&w) {
-                    self.lowlink[v] = self.lowlink[v].min(self.number[w]);
-                }
+                self.lowlink
+                    .insert(v, self.lowlink[&v].min(self.lowlink[&w]));
+            } else if self.number[&w] < self.number[&v] && self.stack.contains(&w) {
+                self.lowlink
+                    .insert(v, self.lowlink[&v].min(self.number[&w]));
             }
         }
 
-        if self.lowlink[v] == self.number[v] {
-            // v is the root of a component
+        if self.lowlink[&v] == self.number[&v] {
             let mut scc = Vec::new();
 
-            while let Some(w) = self.stack.pop_if(|w| self.number[*w] >= self.number[v]) {
+            while let Some(w) = self.stack.pop_if(|w| self.number[w] >= self.number[&v]) {
                 scc.push(w);
             }
 
             self.components.push(scc);
         }
     }
+}
+
+fn main() {
+    let graph = Graph::new(vec![
+        Node {
+            id: 1,
+            neighbours: BTreeSet::from([2]),
+        },
+        Node {
+            id: 2,
+            neighbours: BTreeSet::from([3]),
+        },
+        Node {
+            id: 3,
+            neighbours: BTreeSet::from([4]),
+        },
+        Node {
+            id: 4,
+            neighbours: BTreeSet::from([5]),
+        },
+        Node {
+            id: 5,
+            neighbours: BTreeSet::from([1]),
+        },
+    ]);
+
+    Johnson::new(graph).detect();
 }
