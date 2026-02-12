@@ -36,7 +36,7 @@ impl Graph {
         Self { nodes }
     }
 
-    pub fn subgraph(&self, subset: &Vec<usize>) -> Self {
+    pub fn subgraph(&self, subset: &[usize]) -> Self {
         let mut nodes = self.nodes.clone();
 
         nodes.retain(|id, node| {
