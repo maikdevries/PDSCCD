@@ -5,6 +5,7 @@ use crate::graph::{core::Graph, tarjan::Tarjan};
 pub struct Johnson {
     B: HashMap<usize, HashSet<usize>>,
     blocked: HashSet<usize>,
+    graph: Graph,
     n: usize,
     s: usize,
     stack: Vec<usize>,
@@ -16,6 +17,7 @@ impl Johnson {
         Self {
             B: HashMap::new(),
             blocked: HashSet::new(),
+            graph: graph.clone(),
             n: graph.nodes.len(),
             s: 1,
             stack: Vec::new(),
@@ -27,11 +29,11 @@ impl Johnson {
         while self.s < self.n {
             // [NOTE] Compute strongest connected component of subgraph G induced by { s, s + 1, ..., n }
             self.subgraph = {
-                let components = Tarjan::new(self.subgraph.induce(self.s)).detect();
+                let components = Tarjan::new(self.graph.induce(self.s)).detect();
                 let component = components.iter().min_by_key(|c| c.iter().min());
 
                 if let Some(scc) = component {
-                    self.subgraph.subgraph(scc)
+                    self.graph.subgraph(scc)
                 } else {
                     Graph::new(Vec::new())
                 }

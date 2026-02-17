@@ -15,6 +15,7 @@ impl Node {
     }
 }
 
+#[derive(Clone)]
 pub struct Graph {
     pub nodes: BTreeMap<usize, Node>,
 }
