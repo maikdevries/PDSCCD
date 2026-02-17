@@ -30,10 +30,10 @@ impl Johnson {
             // [NOTE] Compute strongest connected component of subgraph G induced by { s, s + 1, ..., n }
             self.subgraph = {
                 let components = Tarjan::new(self.graph.induce(self.s)).detect();
-                let component = components.iter().min_by_key(|c| c.iter().min());
+                let component = components.into_iter().find(|c| c.contains(&self.s));
 
                 if let Some(scc) = component {
-                    self.graph.subgraph(scc)
+                    self.graph.subgraph(&scc)
                 } else {
                     Graph::new(Vec::new())
                 }
