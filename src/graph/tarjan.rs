@@ -30,7 +30,7 @@ impl Tarjan {
             }
         }
 
-        return self.components.clone();
+        return self.components;
     }
 
     fn strong_connect(&mut self, v: usize) {
