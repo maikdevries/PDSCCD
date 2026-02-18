@@ -35,13 +35,14 @@ impl Johnson {
             self.subgraph = {
                 // [PERF] Induce graph from previous induced graph
                 let components = Tarjan::new(self.graph.induce(self.s)).detect();
-
-                // [BUG] Strongly connected components might not include starting node
-                let component = components.into_iter().find(|c| c.contains(&self.s));
+                let component = components
+                    .iter()
+                    .filter(|c| c.len() > 1)
+                    .min_by_key(|c| c.iter().min());
 
                 if let Some(scc) = component {
                     // [PERF] Extract subgraph from induced graph
-                    self.graph.subgraph(&scc)
+                    self.graph.subgraph(scc)
                 } else {
                     Graph::new(Vec::new())
                 }

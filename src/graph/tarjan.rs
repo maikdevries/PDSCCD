@@ -60,7 +60,6 @@ impl Tarjan {
                 scc.push(w);
             }
 
-            // [BUG] Strongly connected components should consist of at least two nodes
             self.components.push(scc);
         }
     }
