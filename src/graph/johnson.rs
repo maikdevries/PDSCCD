@@ -18,21 +18,29 @@ impl Johnson {
             B: HashMap::new(),
             blocked: HashSet::new(),
             graph: graph.clone(),
+            // [BUG] Last graph node might have ID higher than number of nodes in graph
             n: graph.nodes.len(),
+            // [BUG] First graph node might have ID other than 1
             s: 1,
             stack: Vec::new(),
+            // [PERF] Initialise to empty Graph to avoid expensive clone of input graph
             subgraph: graph,
         }
     }
 
     pub fn detect(mut self) {
+        // [BUG] Does not consider components rooted in last graph node
         while self.s < self.n {
             // [NOTE] Compute strongest connected component of subgraph G induced by { s, s + 1, ..., n }
             self.subgraph = {
+                // [PERF] Induce graph from previous induced graph
                 let components = Tarjan::new(self.graph.induce(self.s)).detect();
+
+                // [BUG] Strongly connected components might not include starting node
                 let component = components.into_iter().find(|c| c.contains(&self.s));
 
                 if let Some(scc) = component {
+                    // [PERF] Extract subgraph from induced graph
                     self.graph.subgraph(&scc)
                 } else {
                     Graph::new(Vec::new())
@@ -61,6 +69,7 @@ impl Johnson {
         self.stack.push(v);
         self.blocked.insert(v);
 
+        // [PERF] Use reference to avoid expensive clone of neighbours
         let neighbours = self.subgraph.nodes[&v].neighbours.clone();
 
         for w in &neighbours {

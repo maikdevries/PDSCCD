@@ -40,11 +40,13 @@ impl Tarjan {
 
         self.stack.push(v);
 
+        // [PERF] Use reference to avoid expensive clone of neighbours
         for w in self.subgraph.nodes[&v].neighbours.clone() {
             if !self.number.contains_key(&w) {
                 self.strong_connect(w);
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.lowlink[&w]));
+            // [PERF] Use sorted data structure to avoid expensive linear search per node
             } else if self.number[&w] < self.number[&v] && self.stack.contains(&w) {
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.number[&w]));
@@ -58,6 +60,7 @@ impl Tarjan {
                 scc.push(w);
             }
 
+            // [BUG] Strongly connected components should consist of at least two nodes
             self.components.push(scc);
         }
     }

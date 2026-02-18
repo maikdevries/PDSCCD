@@ -40,6 +40,7 @@ impl Graph {
     pub fn subgraph(&self, subset: &[usize]) -> Self {
         let mut nodes = self.nodes.clone();
 
+        // [PERF] Use HashSet to avoid expensive linear search per node
         nodes.retain(|id, node| {
             node.neighbours.retain(|id| subset.contains(id));
             subset.contains(id)
