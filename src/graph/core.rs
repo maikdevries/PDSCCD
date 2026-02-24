@@ -27,6 +27,12 @@ impl Graph {
         }
     }
 
+    pub fn empty() -> Self {
+        Self {
+            nodes: BTreeMap::new(),
+        }
+    }
+
     pub fn induce(&self, s: usize) -> Self {
         let mut nodes = self.nodes.clone().split_off(&s);
 
