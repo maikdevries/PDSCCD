@@ -18,8 +18,7 @@ impl Johnson {
             B: HashMap::new(),
             blocked: HashSet::new(),
             graph: graph.clone(),
-            // [BUG] Last graph node might have ID higher than number of nodes in graph
-            n: graph.nodes.len(),
+            n: graph.nodes.last_key_value().map(|(&k, _)| k).unwrap_or(0),
             // [BUG] First graph node might have ID other than 1
             s: 1,
             stack: Vec::new(),
