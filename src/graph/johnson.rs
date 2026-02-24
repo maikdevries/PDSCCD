@@ -19,8 +19,7 @@ impl Johnson {
             blocked: HashSet::new(),
             graph: graph.clone(),
             n: graph.nodes.last_key_value().map(|(&k, _)| k).unwrap_or(0),
-            // [BUG] First graph node might have ID other than 1
-            s: 1,
+            s: graph.nodes.first_key_value().map(|(&k, _)| k).unwrap_or(0),
             stack: Vec::new(),
             // [PERF] Initialise to empty Graph to avoid expensive clone of input graph
             subgraph: graph,
