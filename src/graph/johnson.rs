@@ -29,16 +29,15 @@ impl Johnson {
         // [BUG] Does not consider components rooted in last graph node
         while self.s < self.n {
             // [NOTE] Compute strongest connected component of subgraph G induced by { s, s + 1, ..., n }
+            self.graph = self.graph.induce(self.s);
             self.subgraph = {
-                // [PERF] Induce graph from previous induced graph
-                let components = Tarjan::new(&self.graph.induce(self.s)).detect();
+                let components = Tarjan::new(&self.graph).detect();
                 let component = components
                     .iter()
                     .filter(|c| c.len() > 1)
                     .min_by_key(|c| c.iter().min());
 
                 if let Some(scc) = component {
-                    // [PERF] Extract subgraph from induced graph
                     self.graph.subgraph(scc)
                 } else {
                     Graph::new(Vec::new())
