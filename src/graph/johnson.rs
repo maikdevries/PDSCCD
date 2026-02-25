@@ -31,7 +31,7 @@ impl Johnson {
             // [NOTE] Compute strongest connected component of subgraph G induced by { s, s + 1, ..., n }
             self.subgraph = {
                 // [PERF] Induce graph from previous induced graph
-                let components = Tarjan::new(self.graph.induce(self.s)).detect();
+                let components = Tarjan::new(&self.graph.induce(self.s)).detect();
                 let component = components
                     .iter()
                     .filter(|c| c.len() > 1)

@@ -2,17 +2,17 @@ use std::collections::HashMap;
 
 use crate::graph::core::Graph;
 
-pub struct Tarjan {
+pub struct Tarjan<'a> {
     components: Vec<Vec<usize>>,
     i: usize,
     lowlink: HashMap<usize, usize>,
     number: HashMap<usize, usize>,
     stack: Vec<usize>,
-    subgraph: Graph,
+    subgraph: &'a Graph,
 }
 
-impl Tarjan {
-    pub fn new(graph: Graph) -> Self {
+impl<'a> Tarjan<'a> {
+    pub fn new(graph: &'a Graph) -> Self {
         Self {
             components: Vec::new(),
             i: 0,
