@@ -8,23 +8,23 @@ pub struct Tarjan<'a> {
     lowlink: HashMap<usize, usize>,
     number: HashMap<usize, usize>,
     stack: Vec<usize>,
-    subgraph: &'a Graph,
+    graph: &'a Graph,
 }
 
 impl<'a> Tarjan<'a> {
     pub fn new(graph: &'a Graph) -> Self {
         Self {
             components: Vec::new(),
+            graph,
             i: 0,
             lowlink: HashMap::new(),
             number: HashMap::new(),
             stack: Vec::new(),
-            subgraph: graph,
         }
     }
 
     pub fn detect(mut self) -> Vec<Vec<usize>> {
-        for w in self.subgraph.nodes.keys().copied().collect::<Vec<usize>>() {
+        for w in self.graph.nodes.keys().copied().collect::<Vec<usize>>() {
             if !self.number.contains_key(&w) {
                 self.strong_connect(w);
             }
@@ -41,7 +41,7 @@ impl<'a> Tarjan<'a> {
         self.stack.push(v);
 
         // [PERF] Use reference to avoid expensive clone of neighbours
-        for w in self.subgraph.nodes[&v].neighbours.clone() {
+        for w in self.graph.nodes[&v].neighbours.clone() {
             if !self.number.contains_key(&w) {
                 self.strong_connect(w);
                 self.lowlink
