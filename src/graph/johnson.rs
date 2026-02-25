@@ -20,7 +20,7 @@ impl Johnson {
             n: graph.nodes.last_key_value().map(|(&k, _)| k).unwrap_or(0),
             s: graph.nodes.first_key_value().map(|(&k, _)| k).unwrap_or(0),
             stack: Vec::new(),
-            graph: graph,
+            graph,
             subgraph: Graph::empty(),
         }
     }
