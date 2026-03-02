@@ -4,11 +4,11 @@ use crate::graph::core::Graph;
 
 pub struct Tarjan<'a> {
     components: Vec<Vec<usize>>,
+    graph: &'a Graph,
     i: usize,
     lowlink: HashMap<usize, usize>,
     number: HashMap<usize, usize>,
     stack: Vec<usize>,
-    graph: &'a Graph,
 }
 
 impl<'a> Tarjan<'a> {
@@ -62,5 +62,91 @@ impl<'a> Tarjan<'a> {
 
             self.components.push(scc);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::graph::core::Node;
+
+    #[test]
+    fn initialisation() {
+        let graph = Graph::new(vec![
+            Node::new(2, vec![3]),
+            Node::new(3, vec![5]),
+            Node::new(5, vec![2]),
+        ]);
+
+        let tarjan = Tarjan::new(&graph);
+
+        assert!(tarjan.components.is_empty());
+        assert_eq!(tarjan.graph, &graph);
+        assert_eq!(tarjan.i, 0);
+        assert!(tarjan.lowlink.is_empty());
+        assert!(tarjan.number.is_empty());
+        assert!(tarjan.stack.is_empty());
+    }
+
+    #[test]
+    fn detect_components_disconnected() {
+        let graph = Graph::new(vec![
+            Node::new(2, vec![]),
+            Node::new(3, vec![]),
+            Node::new(5, vec![]),
+        ]);
+
+        let components = Tarjan::new(&graph).detect();
+
+        assert_eq!(components, vec![vec![2], vec![3], vec![5]]);
+    }
+
+    #[test]
+    fn detect_components_cycle() {
+        let graph = Graph::new(vec![
+            Node::new(2, vec![3]),
+            Node::new(3, vec![5]),
+            Node::new(5, vec![2]),
+        ]);
+
+        let components = Tarjan::new(&graph).detect();
+
+        assert_eq!(components, vec![vec![5, 3, 2]]);
+    }
+
+    #[test]
+    fn detect_components_unconnected_cycles() {
+        let graph = Graph::new(vec![
+            Node::new(2, vec![3]),
+            Node::new(3, vec![2]),
+            Node::new(5, vec![7]),
+            Node::new(7, vec![5]),
+        ]);
+
+        let components = Tarjan::new(&graph).detect();
+
+        assert_eq!(components, vec![vec![3, 2], vec![7, 5]]);
+    }
+
+    #[test]
+    fn detect_components_complex() {
+        let graph = Graph::new(vec![
+            Node::new(2, vec![3]),
+            Node::new(3, vec![5, 19]),
+            Node::new(5, vec![7, 17]),
+            Node::new(7, vec![11]),
+            Node::new(11, vec![5, 13]),
+            Node::new(13, vec![]),
+            Node::new(17, vec![7, 13]),
+            Node::new(19, vec![2, 17]),
+        ]);
+
+        let components = Tarjan::new(&graph).detect();
+
+        assert_eq!(
+            components,
+            vec![vec![13], vec![17, 11, 7, 5], vec![19, 3, 2]]
+        );
     }
 }
