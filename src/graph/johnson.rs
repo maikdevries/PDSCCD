@@ -5,6 +5,7 @@ use crate::graph::{core::Graph, tarjan::Tarjan};
 pub struct Johnson {
     B: HashMap<usize, HashSet<usize>>,
     blocked: HashSet<usize>,
+    circuits: Vec<Vec<usize>>,
     graph: Graph,
     n: usize,
     s: usize,
@@ -17,6 +18,7 @@ impl Johnson {
         Self {
             B: HashMap::new(),
             blocked: HashSet::new(),
+            circuits: Vec::new(),
             n: graph.nodes.last_key_value().map(|(&k, _)| k).unwrap_or(0),
             s: graph.nodes.first_key_value().map(|(&k, _)| k).unwrap_or(0),
             stack: Vec::new(),
@@ -25,7 +27,7 @@ impl Johnson {
         }
     }
 
-    pub fn detect(mut self) {
+    pub fn detect(mut self) -> Vec<Vec<usize>> {
         // [BUG] Does not consider components rooted in last graph node
         while self.s < self.n {
             // [NOTE] Compute strongest connected component of subgraph G induced by { s, s + 1, ..., n }
@@ -58,6 +60,8 @@ impl Johnson {
                 self.s = self.n;
             }
         }
+
+        return self.circuits;
     }
 
     fn circuit(&mut self, v: usize) -> bool {
@@ -74,7 +78,7 @@ impl Johnson {
                 let mut stack = self.stack.clone();
                 stack.push(self.s);
 
-                println!("Cycle found: {stack:?}");
+                self.circuits.push(stack);
                 f = true;
             } else if !self.blocked.contains(w) && self.circuit(*w) {
                 f = true;
