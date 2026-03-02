@@ -109,3 +109,91 @@ impl Johnson {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::graph::core::Node;
+
+    #[test]
+    fn initialisation() {
+        let graph = Graph::new(vec![
+            Node::new(2, vec![3]),
+            Node::new(3, vec![5]),
+            Node::new(5, vec![2]),
+        ]);
+
+        let johnson = Johnson::new(graph.clone());
+
+        assert!(johnson.B.is_empty());
+        assert!(johnson.blocked.is_empty());
+        assert!(johnson.circuits.is_empty());
+        assert_eq!(johnson.graph, graph);
+        assert_eq!(johnson.n, 5);
+        assert_eq!(johnson.s, 2);
+        assert!(johnson.stack.is_empty());
+        assert!(johnson.subgraph.nodes.is_empty());
+    }
+
+    #[test]
+    fn detect_circuit_none() {
+        let graph = Graph::new(vec![
+            Node::new(2, vec![]),
+            Node::new(3, vec![]),
+            Node::new(5, vec![]),
+        ]);
+
+        let circuits = Johnson::new(graph).detect();
+
+        assert!(circuits.is_empty());
+    }
+
+    #[test]
+    fn detect_circuit_single() {
+        let graph = Graph::new(vec![
+            Node::new(2, vec![3]),
+            Node::new(3, vec![5]),
+            Node::new(5, vec![2]),
+        ]);
+
+        let circuits = Johnson::new(graph).detect();
+
+        assert_eq!(circuits, vec![vec![2, 3, 5, 2]]);
+    }
+
+    #[test]
+    fn detect_circuit_multiple() {
+        let graph = Graph::new(vec![
+            Node::new(2, vec![3]),
+            Node::new(3, vec![2]),
+            Node::new(5, vec![7]),
+            Node::new(7, vec![5]),
+        ]);
+
+        let circuits = Johnson::new(graph).detect();
+
+        assert_eq!(circuits, vec![vec![2, 3, 2], vec![5, 7, 5]]);
+    }
+
+    #[test]
+    fn detect_circuit_complex() {
+        let graph = Graph::new(vec![
+            Node::new(2, vec![3]),
+            Node::new(3, vec![5, 19]),
+            Node::new(5, vec![7, 17]),
+            Node::new(7, vec![11]),
+            Node::new(11, vec![5, 13]),
+            Node::new(13, vec![]),
+            Node::new(17, vec![7, 13]),
+            Node::new(19, vec![2, 17]),
+        ]);
+
+        let circuits = Johnson::new(graph).detect();
+
+        assert_eq!(
+            circuits,
+            vec![vec![2, 3, 19, 2], vec![5, 7, 11, 5], vec![5, 17, 7, 11, 5]],
+        );
+    }
+}
