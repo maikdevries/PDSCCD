@@ -1,12 +1,24 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-pub struct Participant<'a> {
-    id: &'static str,
-    graph: &'a Graph,
+pub struct Protocol<'a> {
+    participants: HashMap<&'static str, &'a Participant>,
 }
 
-impl<'a> Participant<'a> {
-    pub fn new(id: &'static str, graph: &'a Graph) -> Self {
+impl<'a> Protocol<'a> {
+    pub fn new(participants: Vec<&'a Participant>) -> Self {
+        Self {
+            participants: participants.into_iter().map(|p| (p.id, p)).collect(),
+        }
+    }
+}
+
+pub struct Participant {
+    id: &'static str,
+    graph: Graph,
+}
+
+impl Participant {
+    pub fn new(id: &'static str, graph: Graph) -> Self {
         Self { id, graph }
     }
 }
