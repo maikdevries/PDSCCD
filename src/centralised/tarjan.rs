@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::graph::core::Graph;
+use crate::centralised::core::Graph;
 
 pub struct Tarjan<'a> {
     components: Vec<Vec<usize>>,
@@ -69,7 +69,7 @@ impl<'a> Tarjan<'a> {
 mod tests {
     use super::*;
 
-    use crate::graph::core::Node;
+    use crate::centralised::core::Node;
 
     #[test]
     fn initialisation() {

@@ -1,4 +1,4 @@
-use pcd::graph::{
+use pcd::centralised::{
     core::{Graph, Node},
     johnson::Johnson,
 };

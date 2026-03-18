@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::graph::{core::Graph, tarjan::Tarjan};
+use crate::centralised::{core::Graph, tarjan::Tarjan};
 
 pub struct Johnson {
     B: HashMap<usize, HashSet<usize>>,
@@ -33,11 +33,14 @@ impl Johnson {
             // [NOTE] Compute strongest connected component of subgraph G induced by { s, s + 1, ..., n }
             self.graph = self.graph.induce(self.s);
             self.subgraph = {
+                // [PERF] Exhaust all detected components before performing another search
                 let components = Tarjan::new(&self.graph).detect();
                 let component = components
                     .iter()
                     .filter(|c| c.len() > 1)
                     .min_by_key(|c| c.iter().min());
+
+                println!("{components:?}");
 
                 if let Some(scc) = component {
                     self.graph.subgraph(scc)
@@ -55,6 +58,8 @@ impl Johnson {
                 }
 
                 self.circuit(self.s);
+
+                // [PERF] Set to least node not part of any previous components
                 self.s += 1;
             } else {
                 self.s = self.n;
@@ -114,7 +119,7 @@ impl Johnson {
 mod tests {
     use super::*;
 
-    use crate::graph::core::Node;
+    use crate::centralised::core::Node;
 
     #[test]
     fn initialisation() {
