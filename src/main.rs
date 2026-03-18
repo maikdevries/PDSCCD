@@ -51,4 +51,7 @@ fn main() {
     );
 
     let protocol = Protocol::new(vec![&A, &B, &C]);
+
+    let components = A.detect();
+    println!("Components: {components:?}");
 }
