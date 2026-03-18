@@ -17,7 +17,7 @@
 
 // --- --- --- --- ---
 
-use pcd::distributed::core::{Graph, Location, Node};
+use pcd::distributed::core::{Graph, Location, Node, Participant};
 
 fn main() {
     let first = Graph::new(vec![
@@ -27,10 +27,14 @@ fn main() {
         Node::new(3, Location::External("B"), vec![]),
     ]);
 
+    let A = Participant::new("A", &first);
+
     let second = Graph::new(vec![
         Node::new(0, Location::Internal, vec![1]),
         Node::new(1, Location::External("A"), vec![]),
         Node::new(2, Location::External("A"), vec![3]),
         Node::new(3, Location::Internal, vec![0]),
     ]);
+
+    let B = Participant::new("B", &second);
 }

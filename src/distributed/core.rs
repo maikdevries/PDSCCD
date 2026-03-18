@@ -1,5 +1,16 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+pub struct Participant<'a> {
+    id: &'static str,
+    graph: &'a Graph,
+}
+
+impl<'a> Participant<'a> {
+    pub fn new(id: &'static str, graph: &'a Graph) -> Self {
+        Self { id, graph }
+    }
+}
+
 pub struct Graph {
     nodes: BTreeMap<usize, Node>,
 }
