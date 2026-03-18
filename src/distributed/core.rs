@@ -24,7 +24,7 @@ impl Participant {
 }
 
 pub struct Graph {
-    nodes: BTreeMap<usize, Node>,
+    pub nodes: BTreeMap<usize, Node>,
 }
 
 impl Graph {
@@ -38,7 +38,7 @@ impl Graph {
 pub struct Node {
     id: usize,
     location: Location,
-    neighbours: BTreeSet<usize>,
+    pub neighbours: BTreeSet<usize>,
 }
 
 impl Node {
