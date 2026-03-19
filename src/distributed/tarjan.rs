@@ -41,7 +41,7 @@ impl<'a> Tarjan<'a> {
         }
     }
 
-    pub fn detect(mut self, roots: Vec<&usize>) -> Vec<Vec<usize>> {
+    pub fn detect(mut self, roots: Vec<&usize>) -> (Vec<Vec<usize>>, Vec<Query>) {
         for w in roots {
             let mut query = Query::new();
             query.sources.insert(*w);
@@ -53,7 +53,7 @@ impl<'a> Tarjan<'a> {
             self.queries.push(query);
         }
 
-        return self.components;
+        return (self.components, self.queries);
     }
 
     fn strong_connect(&mut self, v: usize, query: &mut Query) {
