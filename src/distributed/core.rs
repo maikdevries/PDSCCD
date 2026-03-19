@@ -23,7 +23,7 @@ impl Participant {
         Self { id, graph }
     }
 
-    pub fn detect(&self) -> (Vec<Vec<usize>>, Vec<Query>) {
+    pub fn detect(&self) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Query>>) {
         let nodes = self
             .graph
             .nodes

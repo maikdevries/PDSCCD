@@ -20,7 +20,7 @@ pub struct Tarjan<'a> {
     i: usize,
     lowlink: HashMap<usize, usize>,
     number: HashMap<usize, usize>,
-    queries: Vec<Query>,
+    queries: HashMap<&'static str, Vec<Query>>,
     stack: Vec<usize>,
 }
 
@@ -32,12 +32,15 @@ impl<'a> Tarjan<'a> {
             i: 0,
             lowlink: HashMap::new(),
             number: HashMap::new(),
-            queries: Vec::new(),
+            queries: HashMap::new(),
             stack: Vec::new(),
         }
     }
 
-    pub fn detect(mut self, roots: Vec<&usize>) -> (Vec<Vec<usize>>, Vec<Query>) {
+    pub fn detect(
+        mut self,
+        roots: Vec<&usize>,
+    ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Query>>) {
         for w in roots {
             if !self.number.contains_key(w) {
                 self.strong_connect(*w, *w);
@@ -67,12 +70,15 @@ impl<'a> Tarjan<'a> {
             }
         }
 
-        if let Location::External(_) = self.graph.nodes[&v].location {
-            self.queries.push(Query::new(
-                root,
-                v,
-                Vec::from(self.stack.get(1..self.stack.len() - 1).unwrap_or_default()),
-            ));
+        if let Location::External(participant) = self.graph.nodes[&v].location {
+            self.queries
+                .entry(participant)
+                .or_insert(Vec::new())
+                .push(Query::new(
+                    root,
+                    v,
+                    Vec::from(self.stack.get(1..self.stack.len() - 1).unwrap_or_default()),
+                ));
         }
 
         if self.lowlink[&v] == self.number[&v] {
