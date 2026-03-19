@@ -52,7 +52,7 @@ impl Graph {
 
 pub struct Node {
     id: usize,
-    location: Location,
+    pub location: Location,
     pub neighbours: BTreeSet<usize>,
 }
 
