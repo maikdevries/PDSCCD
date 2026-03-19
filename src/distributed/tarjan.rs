@@ -1,5 +1,5 @@
 use crate::distributed::core::{Graph, Location};
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Query {
@@ -21,7 +21,7 @@ pub struct Tarjan<'a> {
     lowlink: HashMap<usize, usize>,
     number: HashMap<usize, usize>,
     queries: Vec<Query>,
-    stack: VecDeque<usize>,
+    stack: Vec<usize>,
 }
 
 impl<'a> Tarjan<'a> {
@@ -33,7 +33,7 @@ impl<'a> Tarjan<'a> {
             lowlink: HashMap::new(),
             number: HashMap::new(),
             queries: Vec::new(),
-            stack: VecDeque::new(),
+            stack: Vec::new(),
         }
     }
 
@@ -52,7 +52,7 @@ impl<'a> Tarjan<'a> {
         self.lowlink.insert(v, self.i);
         self.number.insert(v, self.i);
 
-        self.stack.push_back(v);
+        self.stack.push(v);
 
         // [PERF] Use reference to avoid expensive clone of neighbours
         for w in self.graph.nodes[&v].neighbours.clone() {
@@ -68,21 +68,17 @@ impl<'a> Tarjan<'a> {
         }
 
         if let Location::External(_) = self.graph.nodes[&v].location {
-            let mut path = self.stack.clone();
-
-            path.pop_front();
-            path.pop_back();
-
-            self.queries.push(Query::new(root, v, Vec::from(path)));
+            self.queries.push(Query::new(
+                root,
+                v,
+                Vec::from(self.stack.get(1..self.stack.len() - 1).unwrap_or_default()),
+            ));
         }
 
         if self.lowlink[&v] == self.number[&v] {
             let mut scc = Vec::new();
 
-            while let Some(w) = self
-                .stack
-                .pop_back_if(|w| self.number[w] >= self.number[&v])
-            {
+            while let Some(w) = self.stack.pop_if(|w| self.number[w] >= self.number[&v]) {
                 scc.push(w);
             }
 
