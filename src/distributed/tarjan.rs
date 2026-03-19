@@ -1,5 +1,22 @@
 use crate::distributed::core::Graph;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+
+#[derive(Debug)]
+pub struct Query {
+    path: Vec<usize>,
+    sinks: HashSet<usize>,
+    sources: HashSet<usize>,
+}
+
+impl Query {
+    fn new() -> Self {
+        Self {
+            path: Vec::new(),
+            sinks: HashSet::new(),
+            sources: HashSet::new(),
+        }
+    }
+}
 
 pub struct Tarjan<'a> {
     components: Vec<Vec<usize>>,
