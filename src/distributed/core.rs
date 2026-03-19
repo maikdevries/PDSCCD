@@ -24,7 +24,16 @@ impl Participant {
     }
 
     pub fn detect(&self) -> Vec<Vec<usize>> {
-        let nodes = self.graph.nodes.keys().collect();
+        let nodes = self
+            .graph
+            .nodes
+            .iter()
+            .filter(|(_, node)| {
+                matches!(node.location, Location::External(_)) && node.neighbours.len() > 0
+            })
+            .map(|(id, _)| id)
+            .collect();
+
         return Tarjan::new(&self.graph).detect(nodes);
     }
 }
