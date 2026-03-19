@@ -1,20 +1,16 @@
 use crate::distributed::core::{Graph, Location};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Query {
     path: Vec<usize>,
-    sinks: HashSet<usize>,
-    sources: HashSet<usize>,
+    sink: usize,
+    source: usize,
 }
 
 impl Query {
-    fn new() -> Self {
-        Self {
-            path: Vec::new(),
-            sinks: HashSet::new(),
-            sources: HashSet::new(),
-        }
+    fn new(source: usize, sink: usize, path: Vec<usize>) -> Self {
+        Self { path, sink, source }
     }
 }
 
@@ -43,20 +39,15 @@ impl<'a> Tarjan<'a> {
 
     pub fn detect(mut self, roots: Vec<&usize>) -> (Vec<Vec<usize>>, Vec<Query>) {
         for w in roots {
-            let mut query = Query::new();
-            query.sources.insert(*w);
-
             if !self.number.contains_key(w) {
-                self.strong_connect(*w, &mut query);
+                self.strong_connect(*w, *w);
             }
-
-            self.queries.push(query);
         }
 
         return (self.components, self.queries);
     }
 
-    fn strong_connect(&mut self, v: usize, query: &mut Query) {
+    fn strong_connect(&mut self, v: usize, root: usize) {
         self.i += 1;
         self.lowlink.insert(v, self.i);
         self.number.insert(v, self.i);
@@ -65,17 +56,8 @@ impl<'a> Tarjan<'a> {
 
         // [PERF] Use reference to avoid expensive clone of neighbours
         for w in self.graph.nodes[&v].neighbours.clone() {
-            match self.graph.nodes[&w].location {
-                Location::External(_) => {
-                    query.sinks.insert(w);
-                }
-                Location::Internal => {
-                    query.path.push(w);
-                }
-            }
-
             if !self.number.contains_key(&w) {
-                self.strong_connect(w, query);
+                self.strong_connect(w, root);
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.lowlink[&w]));
             // [PERF] Use sorted data structure to avoid expensive linear search per node
@@ -83,6 +65,10 @@ impl<'a> Tarjan<'a> {
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.number[&w]));
             }
+        }
+
+        if let Location::External(_) = self.graph.nodes[&v].location {
+            self.queries.push(Query::new(root, v, self.stack.clone()));
         }
 
         if self.lowlink[&v] == self.number[&v] {
