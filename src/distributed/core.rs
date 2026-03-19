@@ -24,7 +24,8 @@ impl Participant {
     }
 
     pub fn detect(&self) -> Vec<Vec<usize>> {
-        return Tarjan::new(&self.graph).detect();
+        let nodes = self.graph.nodes.keys().collect();
+        return Tarjan::new(&self.graph).detect(nodes);
     }
 }
 

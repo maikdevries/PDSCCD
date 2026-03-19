@@ -22,10 +22,10 @@ impl<'a> Tarjan<'a> {
         }
     }
 
-    pub fn detect(mut self) -> Vec<Vec<usize>> {
-        for w in self.graph.nodes.keys().copied().collect::<Vec<usize>>() {
-            if !self.number.contains_key(&w) {
-                self.strong_connect(w);
+    pub fn detect(mut self, roots: Vec<&usize>) -> Vec<Vec<usize>> {
+        for w in roots {
+            if !self.number.contains_key(w) {
+                self.strong_connect(*w);
             }
         }
 
