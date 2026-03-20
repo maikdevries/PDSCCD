@@ -1,4 +1,4 @@
-use crate::distributed::tarjan::{Query, Tarjan};
+use crate::distributed::tarjan::{Partial, Tarjan};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 pub struct Protocol<'a> {
@@ -23,7 +23,7 @@ impl Participant {
         Self { id, graph }
     }
 
-    pub fn detect(&self) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Query>>) {
+    pub fn detect(&self) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Partial>>) {
         let nodes = self
             .graph
             .nodes
