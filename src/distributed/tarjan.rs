@@ -2,13 +2,13 @@ use crate::distributed::core::{Graph, Location};
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub struct Partial {
+pub struct Candidate {
     path: Vec<usize>,
     sink: usize,
     source: usize,
 }
 
-impl Partial {
+impl Candidate {
     fn new(source: usize, sink: usize, path: Vec<usize>) -> Self {
         Self { path, sink, source }
     }
@@ -20,7 +20,7 @@ pub struct Tarjan<'a> {
     i: usize,
     lowlink: HashMap<usize, usize>,
     number: HashMap<usize, usize>,
-    partials: HashMap<&'static str, Vec<Partial>>,
+    candidates: HashMap<&'static str, Vec<Candidate>>,
     stack: Vec<usize>,
 }
 
@@ -32,7 +32,7 @@ impl<'a> Tarjan<'a> {
             i: 0,
             lowlink: HashMap::new(),
             number: HashMap::new(),
-            partials: HashMap::new(),
+            candidates: HashMap::new(),
             stack: Vec::new(),
         }
     }
@@ -40,14 +40,14 @@ impl<'a> Tarjan<'a> {
     pub fn detect(
         mut self,
         roots: Vec<&usize>,
-    ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Partial>>) {
+    ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
         for w in roots {
             if !self.number.contains_key(w) {
                 self.strong_connect(*w, *w);
             }
         }
 
-        return (self.components, self.partials);
+        return (self.components, self.candidates);
     }
 
     fn strong_connect(&mut self, v: usize, root: usize) {
@@ -71,10 +71,10 @@ impl<'a> Tarjan<'a> {
         }
 
         if let Location::External(participant) = self.graph.nodes[&v].location {
-            self.partials
+            self.candidates
                 .entry(participant)
                 .or_insert(Vec::new())
-                .push(Partial::new(
+                .push(Candidate::new(
                     root,
                     v,
                     Vec::from(self.stack.get(1..self.stack.len() - 1).unwrap_or_default()),
