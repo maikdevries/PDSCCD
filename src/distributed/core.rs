@@ -1,19 +1,6 @@
-use crate::distributed::tarjan::{Partial, Tarjan};
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 
-pub struct Protocol<'a> {
-    participants: HashMap<&'static str, &'a Participant>,
-}
-
-impl<'a> Protocol<'a> {
-    pub fn new(participants: Vec<&'a Participant>) -> Self {
-        Self {
-            participants: participants.into_iter().map(|p| (p.id, p)).collect(),
-        }
-    }
-}
-
-pub struct Participant {
+struct Participant {
     id: &'static str,
     graph: Graph,
 }
@@ -23,18 +10,25 @@ impl Participant {
         Self { id, graph }
     }
 
-    pub fn detect(&self) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Partial>>) {
-        let nodes = self
-            .graph
-            .nodes
-            .iter()
-            .filter(|(_, node)| {
-                matches!(node.location, Location::External(_)) && node.neighbours.len() > 0
-            })
-            .map(|(id, _)| id)
-            .collect();
+    fn compute() {
+        todo!(
+            "Participant should be able to compute components within their graph; the search is rooted in either some \
+            specific (external) node, or any of its (external) nodes."
+        )
+    }
 
-        return Tarjan::new(&self.graph).detect(nodes);
+    fn receive() {
+        todo!(
+            "Participant should be able to receive queries from other participants; this either results in a search \
+            rooted at the specific node, or the establishment of a component it previously send a query for."
+        )
+    }
+
+    fn send() {
+        todo!(
+            "Participant should be able to send queries to other participants to have them search their graphs from \
+            the sink external node."
+        )
     }
 }
 
