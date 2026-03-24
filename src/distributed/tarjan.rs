@@ -1,16 +1,22 @@
-use crate::distributed::core::{Graph, Location};
+use crate::distributed::core::{Graph, Location, Query};
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Candidate {
-    path: Vec<usize>,
+    pub path: Vec<usize>,
     sink: usize,
-    source: usize,
+    pub source: usize,
+    pub token: u128,
 }
 
 impl Candidate {
-    fn new(source: usize, sink: usize, path: Vec<usize>) -> Self {
-        Self { path, sink, source }
+    fn new(source: usize, sink: usize, path: Vec<usize>, token: Option<u128>) -> Self {
+        Self {
+            path,
+            sink,
+            source,
+            token: token.unwrap_or_else(|| rand::random::<u128>()),
+        }
     }
 }
 
@@ -39,18 +45,18 @@ impl<'a> Tarjan<'a> {
 
     pub fn detect(
         mut self,
-        roots: Vec<&usize>,
+        queries: Vec<Query>,
     ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
-        for w in roots {
-            if !self.number.contains_key(w) {
-                self.strong_connect(*w, *w);
+        for Query { node, token } in queries {
+            if !self.number.contains_key(&node) {
+                self.strong_connect(node, node, token);
             }
         }
 
         return (self.components, self.candidates);
     }
 
-    fn strong_connect(&mut self, v: usize, root: usize) {
+    fn strong_connect(&mut self, v: usize, root: usize, token: Option<u128>) {
         self.i += 1;
         self.lowlink.insert(v, self.i);
         self.number.insert(v, self.i);
@@ -60,7 +66,7 @@ impl<'a> Tarjan<'a> {
         // [PERF] Use reference to avoid expensive clone of neighbours
         for w in self.graph.nodes[&v].neighbours.clone() {
             if !self.number.contains_key(&w) {
-                self.strong_connect(w, root);
+                self.strong_connect(w, root, token);
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.lowlink[&w]));
             // [PERF] Use sorted data structure to avoid expensive linear search per node
@@ -78,7 +84,7 @@ impl<'a> Tarjan<'a> {
                 self.candidates
                     .entry(participant)
                     .or_insert(Vec::new())
-                    .push(Candidate::new(root, v, path));
+                    .push(Candidate::new(root, v, path, token));
             }
         }
 

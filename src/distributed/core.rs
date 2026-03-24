@@ -1,34 +1,125 @@
-use std::collections::{BTreeMap, BTreeSet};
+use crate::distributed::tarjan::{Candidate, Tarjan};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-struct Participant {
+struct Protocol {
+    out: HashMap<usize, HashMap<u128, Candidate>>,
+}
+
+impl Protocol {
+    fn new() -> Self {
+        Self {
+            out: HashMap::new(),
+        }
+    }
+
+    fn compute(
+        graph: &Graph,
+        queries: Vec<Query>,
+    ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
+        let (components, candidates) = Tarjan::new(graph).detect(queries);
+
+        // [NOTE] Filter out trivial components (i.e. consist of a single node)
+        let components = components.into_iter().filter(|c| c.len() > 1).collect();
+
+        return (components, candidates);
+    }
+
+    fn prepare(
+        &mut self,
+        candidates: HashMap<&'static str, Vec<Candidate>>,
+    ) -> HashMap<&'static str, Vec<Query>> {
+        return candidates
+            .into_iter()
+            .map(|(participant, candidates)| {
+                (
+                    participant,
+                    candidates
+                        .into_iter()
+                        .map(|c| {
+                            let query = Query::new(
+                                *c.path.last().expect("Candidate path must not be empty"),
+                                c.token,
+                            );
+
+                            self.out
+                                .entry(c.source)
+                                .or_insert(HashMap::new())
+                                .insert(c.token, c);
+
+                            return query;
+                        })
+                        .collect(),
+                )
+            })
+            .collect();
+    }
+
+    fn resolve(&self, mut queries: Vec<Query>) -> (Vec<&Candidate>, Vec<Query>) {
+        let mut candidates = Vec::new();
+
+        queries.retain(|query| {
+            if let Some(candidate) = self
+                .out
+                .get(&query.node)
+                .and_then(|tokens| tokens.get(&query.token.expect("Query must contain a token")))
+            {
+                candidates.push(candidate);
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+        return (candidates, queries);
+    }
+}
+
+pub struct Participant {
     id: &'static str,
-    graph: Graph,
+    pub graph: Graph,
+    protocol: Protocol,
 }
 
 impl Participant {
     pub fn new(id: &'static str, graph: Graph) -> Self {
-        Self { id, graph }
+        Self {
+            id,
+            graph,
+            protocol: Protocol::new(),
+        }
     }
 
-    fn compute() {
-        todo!(
-            "Participant should be able to compute components within their graph; the search is rooted in either some \
-            specific (external) node, or any of its (external) nodes."
-        )
+    pub fn compute(
+        &self,
+        nodes: Vec<Query>,
+    ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
+        return Protocol::compute(&self.graph, nodes);
     }
 
-    fn receive() {
-        todo!(
-            "Participant should be able to receive queries from other participants; this either results in a search \
-            rooted at the specific node, or the establishment of a component it previously send a query for."
-        )
+    pub fn receive(&self, queries: Vec<Query>) -> (Vec<&Candidate>, Vec<Query>) {
+        return self.protocol.resolve(queries);
     }
 
-    fn send() {
-        todo!(
-            "Participant should be able to send queries to other participants to have them search their graphs from \
-            the sink external node."
-        )
+    pub fn send(
+        &mut self,
+        candidates: HashMap<&'static str, Vec<Candidate>>,
+    ) -> HashMap<&'static str, Vec<Query>> {
+        return self.protocol.prepare(candidates);
+    }
+}
+
+#[derive(Debug)]
+pub struct Query {
+    pub node: usize,
+    pub token: Option<u128>,
+}
+
+impl Query {
+    fn new(node: usize, token: u128) -> Self {
+        Self {
+            node,
+            token: Some(token),
+        }
     }
 }
 
@@ -45,7 +136,7 @@ impl Graph {
 }
 
 pub struct Node {
-    id: usize,
+    pub id: usize,
     pub location: Location,
     pub neighbours: BTreeSet<usize>,
 }
