@@ -2,15 +2,13 @@ use crate::distributed::tarjan::Tarjan;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 pub struct Participant {
-    id: &'static str,
     pub graph: Graph,
     out: BTreeMap<usize, BTreeSet<u128>>,
 }
 
 impl Participant {
-    pub fn new(id: &'static str, graph: Graph) -> Self {
+    pub fn new(graph: Graph) -> Self {
         Self {
-            id,
             graph,
             out: BTreeMap::new(),
         }
