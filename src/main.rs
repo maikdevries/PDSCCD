@@ -17,9 +17,8 @@
 
 // --- --- --- --- ---
 
+use pcd::distributed::core::{Graph, Location, Node, Participant, Query};
 use std::collections::{HashMap, VecDeque};
-
-use pcd::distributed::core::{Candidate, Graph, Location, Node, Participant};
 
 fn main() {
     let mut participants = HashMap::from([
@@ -64,12 +63,13 @@ fn main() {
     let A = participants
         .get_mut("A")
         .expect("Participant must have known ID");
+
     let external = A
         .graph
         .nodes
         .values()
         .filter(|n| matches!(n.location, Location::External(_)) && n.neighbours.len() > 0)
-        .map(|n| Candidate::new(n.id))
+        .map(|n| Query::new(n.id))
         .collect();
 
     let (components, candidates) = Participant::compute(&A.graph, external);
@@ -88,11 +88,11 @@ fn main() {
             .get_mut(id)
             .expect("Participant must have known ID");
 
-        let (resolved, queries) = participant.receive(queries);
+        let (resolved, unresolved) = participant.receive(queries);
         println!("Resolved: {resolved:?}");
-        println!("Unresolved: {queries:?}");
+        println!("Unresolved: {unresolved:?}");
 
-        let (components, candidates) = Participant::compute(&participant.graph, queries);
+        let (components, candidates) = Participant::compute(&participant.graph, unresolved);
         println!("Components: {components:?}");
         println!("Candidates: {candidates:?}");
 

@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 pub struct Participant {
     id: &'static str,
     pub graph: Graph,
-    out: HashMap<usize, HashMap<u128, Candidate>>,
+    out: BTreeMap<usize, BTreeSet<u128>>,
 }
 
 impl Participant {
@@ -12,15 +12,15 @@ impl Participant {
         Self {
             id,
             graph,
-            out: HashMap::new(),
+            out: BTreeMap::new(),
         }
     }
 
     pub fn compute(
         graph: &Graph,
-        candidates: Vec<Candidate>,
+        queries: Vec<Query>,
     ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
-        let (components, candidates) = Tarjan::new(graph).detect(candidates);
+        let (components, candidates) = Tarjan::new(graph).detect(queries);
 
         // [NOTE] Filter out trivial components (i.e. consist of a single node)
         let components = components.into_iter().filter(|c| c.len() > 1).collect();
@@ -28,34 +28,19 @@ impl Participant {
         return (components, candidates);
     }
 
-    pub fn receive(&self, mut candidates: Vec<Candidate>) -> (Vec<Candidate>, Vec<Candidate>) {
-        let mut resolved = Vec::new();
-
-        candidates.retain(|c| {
-            if let Some(candidate) = self
-                .out
-                .get(&c.source)
-                .and_then(|tokens| tokens.get(&c.token))
-            {
-                resolved.push(Candidate {
-                    path: c.path.clone(),
-                    target: Some(c.source),
-                    source: candidate.source,
-                    token: candidate.token,
-                });
-                return false;
-            } else {
-                return true;
-            }
+    pub fn receive(&self, queries: Vec<Query>) -> (Vec<Query>, Vec<Query>) {
+        return queries.into_iter().partition(|query| {
+            self.out
+                .get(&query.source)
+                .and_then(|tokens| tokens.get(&query.token))
+                .is_some()
         });
-
-        return (resolved, candidates);
     }
 
     pub fn send(
         &mut self,
         candidates: HashMap<&'static str, Vec<Candidate>>,
-    ) -> HashMap<&'static str, Vec<Candidate>> {
+    ) -> HashMap<&'static str, Vec<Query>> {
         return candidates
             .into_iter()
             .map(|(participant, candidates)| {
@@ -63,20 +48,13 @@ impl Participant {
                     participant,
                     candidates
                         .into_iter()
-                        .map(|c| {
-                            let candidate = Candidate {
-                                path: c.path.clone(),
-                                source: *c.path.last().expect("Candidate path must not be empty"),
-                                target: None,
-                                token: c.token,
-                            };
-
+                        .map(|candidate| {
                             self.out
-                                .entry(c.source)
-                                .or_insert(HashMap::new())
-                                .insert(c.token, c);
+                                .entry(candidate.source)
+                                .or_insert(BTreeSet::new())
+                                .insert(candidate.token);
 
-                            return candidate;
+                            return Query::from(&candidate);
                         })
                         .collect(),
                 )
@@ -86,29 +64,50 @@ impl Participant {
 }
 
 #[derive(Debug)]
-pub struct Candidate {
+pub struct Query {
     pub path: Vec<usize>,
     pub source: usize,
-    pub target: Option<usize>,
     pub token: u128,
 }
 
-impl Candidate {
+impl Query {
     pub fn new(source: usize) -> Self {
         Self {
             path: Vec::new(),
-            target: None,
             source,
             token: rand::random::<u128>(),
         }
     }
+}
 
-    pub fn with(&self, target: usize, path: Vec<usize>) -> Self {
+impl From<&Candidate> for Query {
+    fn from(candidate: &Candidate) -> Self {
         Self {
-            path: self.path.iter().cloned().chain(path).collect(),
-            target: Some(target),
-            source: self.source,
-            token: self.token,
+            path: candidate.path.clone(),
+            source: *candidate
+                .path
+                .last()
+                .expect("Candidate path must not be empty"),
+            token: candidate.token,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Candidate {
+    pub path: Vec<usize>,
+    pub source: usize,
+    pub target: usize,
+    pub token: u128,
+}
+
+impl Candidate {
+    pub fn from(query: &Query, target: usize, path: &[usize]) -> Self {
+        Self {
+            path: query.path.iter().chain(path.into_iter()).copied().collect(),
+            source: query.source,
+            target: target,
+            token: query.token,
         }
     }
 }

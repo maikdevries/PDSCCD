@@ -1,4 +1,4 @@
-use crate::distributed::core::{Candidate, Graph, Location};
+use crate::distributed::core::{Candidate, Graph, Location, Query};
 use std::collections::HashMap;
 
 pub struct Tarjan<'a> {
@@ -26,18 +26,18 @@ impl<'a> Tarjan<'a> {
 
     pub fn detect(
         mut self,
-        candidates: Vec<Candidate>,
+        queries: Vec<Query>,
     ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
-        for candidate in candidates {
-            if !self.number.contains_key(&candidate.source) {
-                self.strong_connect(candidate.source, &candidate);
+        for query in queries {
+            if !self.number.contains_key(&query.source) {
+                self.strong_connect(query.source, &query);
             }
         }
 
         return (self.components, self.candidates);
     }
 
-    fn strong_connect(&mut self, v: usize, candidate: &Candidate) {
+    fn strong_connect(&mut self, v: usize, query: &Query) {
         self.i += 1;
         self.lowlink.insert(v, self.i);
         self.number.insert(v, self.i);
@@ -47,7 +47,7 @@ impl<'a> Tarjan<'a> {
         // [PERF] Use reference to avoid expensive clone of neighbours
         for w in self.graph.nodes[&v].neighbours.clone() {
             if !self.number.contains_key(&w) {
-                self.strong_connect(w, candidate);
+                self.strong_connect(w, query);
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.lowlink[&w]));
             // [PERF] Use sorted data structure to avoid expensive linear search per node
@@ -59,13 +59,13 @@ impl<'a> Tarjan<'a> {
 
         if let Location::External(participant) = self.graph.nodes[&v].location {
             // [NOTE] Path consists of internal nodes and should not include source and target nodes
-            let path = Vec::from(self.stack.get(1..self.stack.len() - 1).unwrap_or_default());
+            let path = self.stack.get(1..self.stack.len() - 1).unwrap_or_default();
 
             if !path.is_empty() {
                 self.candidates
                     .entry(participant)
                     .or_insert(Vec::new())
-                    .push(candidate.with(v, path));
+                    .push(Candidate::from(query, v, path));
             }
         }
 
