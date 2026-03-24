@@ -63,6 +63,8 @@ fn main() {
         .map(|n| Query::new(n.id))
         .collect();
 
+    println!("--- PARTICIPANT A START ---");
+
     let (components, candidates) = Participant::compute(&A.graph, external);
     println!("Components: {components:?}");
     println!("Candidates: {candidates:?}");
@@ -70,14 +72,16 @@ fn main() {
     let queries = A.send(candidates);
     println!("Queries: {queries:?}");
 
-    println!("---");
-
+    println!("--- PARTICIPANT A END ---");
     let mut queue = VecDeque::from_iter(queries);
 
     while let Some((id, queries)) = queue.pop_front() {
         let participant = participants
             .get_mut(id)
             .expect("Participant must have known ID");
+
+        println!();
+        println!("--- PARTICIPANT {id} START ---");
 
         let (resolved, unresolved) = participant.receive(queries);
         println!("Resolved: {resolved:?}");
@@ -90,7 +94,7 @@ fn main() {
         let queries = participant.send(candidates);
         println!("Queries: {queries:?}");
 
-        println!("---");
+        println!("--- PARTICIPANT {id} END ---");
         queue.extend(queries.into_iter());
     }
 }
