@@ -1,4 +1,4 @@
-use crate::distributed::tarjan::{Candidate, Tarjan};
+use crate::distributed::tarjan::Tarjan;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 struct Protocol {
@@ -14,9 +14,9 @@ impl Protocol {
 
     fn compute(
         graph: &Graph,
-        queries: Vec<Query>,
+        candidates: Vec<Candidate>,
     ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
-        let (components, candidates) = Tarjan::new(graph).detect(queries);
+        let (components, candidates) = Tarjan::new(graph).detect(candidates);
 
         // [NOTE] Filter out trivial components (i.e. consist of a single node)
         let components = components.into_iter().filter(|c| c.len() > 1).collect();
@@ -27,7 +27,7 @@ impl Protocol {
     fn prepare(
         &mut self,
         candidates: HashMap<&'static str, Vec<Candidate>>,
-    ) -> HashMap<&'static str, Vec<Query>> {
+    ) -> HashMap<&'static str, Vec<Candidate>> {
         return candidates
             .into_iter()
             .map(|(participant, candidates)| {
@@ -36,17 +36,19 @@ impl Protocol {
                     candidates
                         .into_iter()
                         .map(|c| {
-                            let query = Query::new(
-                                *c.path.last().expect("Candidate path must not be empty"),
-                                c.token,
-                            );
+                            let candidate = Candidate {
+                                path: c.path.clone(),
+                                source: *c.path.last().expect("Candidate path must not be empty"),
+                                sink: None,
+                                token: c.token,
+                            };
 
                             self.out
                                 .entry(c.source)
                                 .or_insert(HashMap::new())
                                 .insert(c.token, c);
 
-                            return query;
+                            return candidate;
                         })
                         .collect(),
                 )
@@ -54,23 +56,28 @@ impl Protocol {
             .collect();
     }
 
-    fn resolve(&self, mut queries: Vec<Query>) -> (Vec<&Candidate>, Vec<Query>) {
-        let mut candidates = Vec::new();
+    fn resolve(&self, mut candidates: Vec<Candidate>) -> (Vec<Candidate>, Vec<Candidate>) {
+        let mut resolved = Vec::new();
 
-        queries.retain(|query| {
+        candidates.retain(|c| {
             if let Some(candidate) = self
                 .out
-                .get(&query.node)
-                .and_then(|tokens| tokens.get(&query.token.expect("Query must contain a token")))
+                .get(&c.source)
+                .and_then(|tokens| tokens.get(&c.token))
             {
-                candidates.push(candidate);
+                resolved.push(Candidate {
+                    path: c.path.clone(),
+                    sink: Some(c.source),
+                    source: candidate.source,
+                    token: candidate.token,
+                });
                 return false;
             } else {
                 return true;
             }
         });
 
-        return (candidates, queries);
+        return (resolved, candidates);
     }
 }
 
@@ -91,34 +98,47 @@ impl Participant {
 
     pub fn compute(
         &self,
-        nodes: Vec<Query>,
+        candidates: Vec<Candidate>,
     ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
-        return Protocol::compute(&self.graph, nodes);
+        return Protocol::compute(&self.graph, candidates);
     }
 
-    pub fn receive(&self, queries: Vec<Query>) -> (Vec<&Candidate>, Vec<Query>) {
-        return self.protocol.resolve(queries);
+    pub fn receive(&self, candidates: Vec<Candidate>) -> (Vec<Candidate>, Vec<Candidate>) {
+        return self.protocol.resolve(candidates);
     }
 
     pub fn send(
         &mut self,
         candidates: HashMap<&'static str, Vec<Candidate>>,
-    ) -> HashMap<&'static str, Vec<Query>> {
+    ) -> HashMap<&'static str, Vec<Candidate>> {
         return self.protocol.prepare(candidates);
     }
 }
 
 #[derive(Debug)]
-pub struct Query {
-    pub node: usize,
-    pub token: Option<u128>,
+pub struct Candidate {
+    pub path: Vec<usize>,
+    pub sink: Option<usize>,
+    pub source: usize,
+    pub token: u128,
 }
 
-impl Query {
-    fn new(node: usize, token: u128) -> Self {
+impl Candidate {
+    pub fn new(source: usize) -> Self {
         Self {
-            node,
-            token: Some(token),
+            path: Vec::new(),
+            sink: None,
+            source,
+            token: rand::random::<u128>(),
+        }
+    }
+
+    pub fn with(&self, sink: usize, path: Vec<usize>) -> Self {
+        Self {
+            path: self.path.iter().cloned().chain(path).collect(),
+            sink: Some(sink),
+            source: self.source,
+            token: self.token,
         }
     }
 }

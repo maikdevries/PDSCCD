@@ -19,7 +19,7 @@
 
 use std::collections::{HashMap, VecDeque};
 
-use pcd::distributed::core::{Graph, Location, Node, Participant, Query};
+use pcd::distributed::core::{Candidate, Graph, Location, Node, Participant};
 
 fn main() {
     let mut participants = HashMap::from([
@@ -69,10 +69,7 @@ fn main() {
         .nodes
         .values()
         .filter(|n| matches!(n.location, Location::External(_)) && n.neighbours.len() > 0)
-        .map(|n| Query {
-            node: n.id,
-            token: None,
-        })
+        .map(|n| Candidate::new(n.id))
         .collect();
 
     let (components, candidates) = A.compute(external);
