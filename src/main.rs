@@ -72,7 +72,7 @@ fn main() {
         .map(|n| Candidate::new(n.id))
         .collect();
 
-    let (components, candidates) = A.compute(external);
+    let (components, candidates) = Participant::compute(&A.graph, external);
     println!("Components: {components:?}");
     println!("Candidates: {candidates:?}");
 
@@ -92,7 +92,7 @@ fn main() {
         println!("Resolved: {resolved:?}");
         println!("Unresolved: {queries:?}");
 
-        let (components, candidates) = participant.compute(queries);
+        let (components, candidates) = Participant::compute(&participant.graph, queries);
         println!("Components: {components:?}");
         println!("Candidates: {candidates:?}");
 

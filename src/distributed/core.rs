@@ -1,18 +1,22 @@
 use crate::distributed::tarjan::Tarjan;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-struct Protocol {
+pub struct Participant {
+    id: &'static str,
+    pub graph: Graph,
     out: HashMap<usize, HashMap<u128, Candidate>>,
 }
 
-impl Protocol {
-    fn new() -> Self {
+impl Participant {
+    pub fn new(id: &'static str, graph: Graph) -> Self {
         Self {
+            id,
+            graph,
             out: HashMap::new(),
         }
     }
 
-    fn compute(
+    pub fn compute(
         graph: &Graph,
         candidates: Vec<Candidate>,
     ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
@@ -24,7 +28,31 @@ impl Protocol {
         return (components, candidates);
     }
 
-    fn prepare(
+    pub fn receive(&self, mut candidates: Vec<Candidate>) -> (Vec<Candidate>, Vec<Candidate>) {
+        let mut resolved = Vec::new();
+
+        candidates.retain(|c| {
+            if let Some(candidate) = self
+                .out
+                .get(&c.source)
+                .and_then(|tokens| tokens.get(&c.token))
+            {
+                resolved.push(Candidate {
+                    path: c.path.clone(),
+                    sink: Some(c.source),
+                    source: candidate.source,
+                    token: candidate.token,
+                });
+                return false;
+            } else {
+                return true;
+            }
+        });
+
+        return (resolved, candidates);
+    }
+
+    pub fn send(
         &mut self,
         candidates: HashMap<&'static str, Vec<Candidate>>,
     ) -> HashMap<&'static str, Vec<Candidate>> {
@@ -54,64 +82,6 @@ impl Protocol {
                 )
             })
             .collect();
-    }
-
-    fn resolve(&self, mut candidates: Vec<Candidate>) -> (Vec<Candidate>, Vec<Candidate>) {
-        let mut resolved = Vec::new();
-
-        candidates.retain(|c| {
-            if let Some(candidate) = self
-                .out
-                .get(&c.source)
-                .and_then(|tokens| tokens.get(&c.token))
-            {
-                resolved.push(Candidate {
-                    path: c.path.clone(),
-                    sink: Some(c.source),
-                    source: candidate.source,
-                    token: candidate.token,
-                });
-                return false;
-            } else {
-                return true;
-            }
-        });
-
-        return (resolved, candidates);
-    }
-}
-
-pub struct Participant {
-    id: &'static str,
-    pub graph: Graph,
-    protocol: Protocol,
-}
-
-impl Participant {
-    pub fn new(id: &'static str, graph: Graph) -> Self {
-        Self {
-            id,
-            graph,
-            protocol: Protocol::new(),
-        }
-    }
-
-    pub fn compute(
-        &self,
-        candidates: Vec<Candidate>,
-    ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
-        return Protocol::compute(&self.graph, candidates);
-    }
-
-    pub fn receive(&self, candidates: Vec<Candidate>) -> (Vec<Candidate>, Vec<Candidate>) {
-        return self.protocol.resolve(candidates);
-    }
-
-    pub fn send(
-        &mut self,
-        candidates: HashMap<&'static str, Vec<Candidate>>,
-    ) -> HashMap<&'static str, Vec<Candidate>> {
-        return self.protocol.prepare(candidates);
     }
 }
 
