@@ -46,6 +46,18 @@ impl<'a> Tarjan<'a> {
 
         // [PERF] Use reference to avoid expensive clone of neighbours
         for w in self.graph.nodes[&v].neighbours.clone() {
+            if let Location::External(participant) = self.graph.nodes[&w].location {
+                // [NOTE] Path consists of internal nodes and should not include source node
+                let path = self.stack.get(1..).unwrap_or_default();
+
+                if !path.is_empty() {
+                    self.candidates
+                        .entry(participant)
+                        .or_insert(Vec::new())
+                        .push(Candidate::from(query, v, path));
+                }
+            }
+
             if !self.number.contains_key(&w) {
                 self.strong_connect(w, query);
                 self.lowlink
@@ -54,18 +66,6 @@ impl<'a> Tarjan<'a> {
             } else if self.number[&w] < self.number[&v] && self.stack.contains(&w) {
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.number[&w]));
-            }
-        }
-
-        if let Location::External(participant) = self.graph.nodes[&v].location {
-            // [NOTE] Path consists of internal nodes and should not include source and target nodes
-            let path = self.stack.get(1..self.stack.len() - 1).unwrap_or_default();
-
-            if !path.is_empty() {
-                self.candidates
-                    .entry(participant)
-                    .or_insert(Vec::new())
-                    .push(Candidate::from(query, v, path));
             }
         }
 

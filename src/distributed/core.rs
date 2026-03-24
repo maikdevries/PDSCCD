@@ -82,10 +82,7 @@ impl From<&Candidate> for Query {
     fn from(candidate: &Candidate) -> Self {
         Self {
             path: candidate.path.clone(),
-            source: *candidate
-                .path
-                .last()
-                .expect("Candidate path must not be empty"),
+            source: candidate.target,
             token: candidate.token,
         }
     }
