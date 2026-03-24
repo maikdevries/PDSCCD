@@ -58,7 +58,7 @@ impl<'a> Tarjan<'a> {
         }
 
         if let Location::External(participant) = self.graph.nodes[&v].location {
-            // [NOTE] Path consists of internal nodes and should not include source (first) and sink (last) nodes
+            // [NOTE] Path consists of internal nodes and should not include source and target nodes
             let path = Vec::from(self.stack.get(1..self.stack.len() - 1).unwrap_or_default());
 
             if !path.is_empty() {

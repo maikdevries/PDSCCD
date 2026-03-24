@@ -39,7 +39,7 @@ impl Participant {
             {
                 resolved.push(Candidate {
                     path: c.path.clone(),
-                    sink: Some(c.source),
+                    target: Some(c.source),
                     source: candidate.source,
                     token: candidate.token,
                 });
@@ -67,7 +67,7 @@ impl Participant {
                             let candidate = Candidate {
                                 path: c.path.clone(),
                                 source: *c.path.last().expect("Candidate path must not be empty"),
-                                sink: None,
+                                target: None,
                                 token: c.token,
                             };
 
@@ -88,8 +88,8 @@ impl Participant {
 #[derive(Debug)]
 pub struct Candidate {
     pub path: Vec<usize>,
-    pub sink: Option<usize>,
     pub source: usize,
+    pub target: Option<usize>,
     pub token: u128,
 }
 
@@ -97,16 +97,16 @@ impl Candidate {
     pub fn new(source: usize) -> Self {
         Self {
             path: Vec::new(),
-            sink: None,
+            target: None,
             source,
             token: rand::random::<u128>(),
         }
     }
 
-    pub fn with(&self, sink: usize, path: Vec<usize>) -> Self {
+    pub fn with(&self, target: usize, path: Vec<usize>) -> Self {
         Self {
             path: self.path.iter().cloned().chain(path).collect(),
-            sink: Some(sink),
+            target: Some(target),
             source: self.source,
             token: self.token,
         }
