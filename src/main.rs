@@ -71,7 +71,11 @@ fn main() {
 
     println!("--- PARTICIPANT A START ---");
 
-    let (components, candidates) = Participant::compute(&A.graph, external);
+    let (resolved, unresolved) = A.receive(queries);
+    println!("Resolved: {resolved:?}");
+    println!("Unresolved: {unresolved:?}");
+
+    let (components, candidates) = Participant::compute(&A.graph, unresolved);
     println!("Components: {components:?}");
     println!("Candidates: {candidates:?}");
 
