@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use crate::centralised::core::Graph;
 
@@ -6,8 +6,8 @@ pub struct Tarjan<'a> {
     components: Vec<Vec<usize>>,
     graph: &'a Graph,
     i: usize,
-    lowlink: HashMap<usize, usize>,
-    number: HashMap<usize, usize>,
+    lowlink: BTreeMap<usize, usize>,
+    number: BTreeMap<usize, usize>,
     stack: Vec<usize>,
 }
 
@@ -17,8 +17,8 @@ impl<'a> Tarjan<'a> {
             components: Vec::new(),
             graph,
             i: 0,
-            lowlink: HashMap::new(),
-            number: HashMap::new(),
+            lowlink: BTreeMap::new(),
+            number: BTreeMap::new(),
             stack: Vec::new(),
         }
     }

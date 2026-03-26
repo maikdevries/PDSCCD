@@ -1,10 +1,10 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::centralised::{core::Graph, tarjan::Tarjan};
 
 pub struct Johnson {
-    B: HashMap<usize, HashSet<usize>>,
-    blocked: HashSet<usize>,
+    B: BTreeMap<usize, BTreeSet<usize>>,
+    blocked: BTreeSet<usize>,
     circuits: Vec<Vec<usize>>,
     graph: Graph,
     n: usize,
@@ -16,8 +16,8 @@ pub struct Johnson {
 impl Johnson {
     pub fn new(graph: Graph) -> Self {
         Self {
-            B: HashMap::new(),
-            blocked: HashSet::new(),
+            B: BTreeMap::new(),
+            blocked: BTreeSet::new(),
             circuits: Vec::new(),
             n: graph.nodes.last_key_value().map(|(&k, _)| k).unwrap_or(0),
             s: graph.nodes.first_key_value().map(|(&k, _)| k).unwrap_or(0),
@@ -94,7 +94,7 @@ impl Johnson {
             self.unblock(v);
         } else {
             for w in neighbours {
-                self.B.entry(w).or_insert(HashSet::new()).insert(v);
+                self.B.entry(w).or_insert(BTreeSet::new()).insert(v);
             }
         }
 

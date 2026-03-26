@@ -1,12 +1,12 @@
 use crate::distributed::core::{Candidate, Graph, Location, Query};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 pub struct Tarjan<'a> {
     components: Vec<Vec<usize>>,
     graph: &'a Graph,
     i: usize,
-    lowlink: HashMap<usize, usize>,
-    number: HashMap<usize, usize>,
+    lowlink: BTreeMap<usize, usize>,
+    number: BTreeMap<usize, usize>,
     candidates: HashMap<&'static str, Vec<Candidate>>,
     stack: Vec<usize>,
 }
@@ -17,8 +17,8 @@ impl<'a> Tarjan<'a> {
             components: Vec::new(),
             graph,
             i: 0,
-            lowlink: HashMap::new(),
-            number: HashMap::new(),
+            lowlink: BTreeMap::new(),
+            number: BTreeMap::new(),
             candidates: HashMap::new(),
             stack: Vec::new(),
         }
