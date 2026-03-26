@@ -55,12 +55,18 @@ fn main() {
         .get_mut("A")
         .expect("Participant must have known ID");
 
-    let external = A
+    let queries = A
         .graph
         .nodes
         .values()
         .filter(|n| matches!(n.location, Location::External(_)) && n.neighbours.len() > 0)
-        .map(|n| Query::new(n.id))
+        .flat_map(|external| {
+            let token = rand::random::<u128>();
+            return external
+                .neighbours
+                .iter()
+                .map(move |&n| Query::new(n, token));
+        })
         .collect();
 
     println!("--- PARTICIPANT A START ---");

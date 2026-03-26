@@ -29,9 +29,7 @@ impl<'a> Tarjan<'a> {
         queries: Vec<Query>,
     ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
         for query in queries {
-            if !self.number.contains_key(&query.source) {
-                self.strong_connect(query.source, &query);
-            }
+            self.strong_connect(query.target, &query);
         }
 
         return (self.components, self.candidates);
@@ -46,19 +44,14 @@ impl<'a> Tarjan<'a> {
 
         // [PERF] Use reference to avoid expensive clone of neighbours
         for w in self.graph.nodes[&v].neighbours.clone() {
-            if let Location::External(participant) = self.graph.nodes[&w].location {
-                // [NOTE] Path consists of internal nodes and should not include source node
-                let path = self.stack.get(1..).unwrap_or_default();
-
-                if !path.is_empty() {
-                    self.candidates
-                        .entry(participant)
-                        .or_insert(Vec::new())
-                        .push(Candidate::from(query, v, path));
-                }
-            }
-
-            if !self.number.contains_key(&w) {
+            if let Location::External(participant) = self.graph.nodes[&w].location
+                && !self.stack.is_empty()
+            {
+                self.candidates
+                    .entry(participant)
+                    .or_insert(Vec::new())
+                    .push(Candidate::from(query, w, &self.stack));
+            } else if !self.number.contains_key(&w) {
                 self.strong_connect(w, query);
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.lowlink[&w]));

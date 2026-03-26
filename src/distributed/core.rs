@@ -29,7 +29,7 @@ impl Participant {
     pub fn receive(&self, queries: Vec<Query>) -> (Vec<Query>, Vec<Query>) {
         return queries.into_iter().partition(|query| {
             self.out
-                .get(&query.source)
+                .get(&query.target)
                 .and_then(|tokens| tokens.get(&query.token))
                 .is_some()
         });
@@ -64,16 +64,16 @@ impl Participant {
 #[derive(Debug)]
 pub struct Query {
     pub path: Vec<usize>,
-    pub source: usize,
+    pub target: usize,
     pub token: u128,
 }
 
 impl Query {
-    pub fn new(source: usize) -> Self {
+    pub fn new(target: usize, token: u128) -> Self {
         Self {
             path: Vec::new(),
-            source,
-            token: rand::random::<u128>(),
+            target,
+            token,
         }
     }
 }
@@ -82,7 +82,7 @@ impl From<&Candidate> for Query {
     fn from(candidate: &Candidate) -> Self {
         Self {
             path: candidate.path.clone(),
-            source: candidate.target,
+            target: candidate.target,
             token: candidate.token,
         }
     }
@@ -97,10 +97,10 @@ pub struct Candidate {
 }
 
 impl Candidate {
-    pub fn from(query: &Query, target: usize, path: &[usize]) -> Self {
+    pub fn from(query: &Query, target: usize, path: &Vec<usize>) -> Self {
         Self {
-            path: query.path.iter().chain(path.into_iter()).copied().collect(),
-            source: query.source,
+            path: query.path.iter().chain(path).copied().collect(),
+            source: query.target,
             target: target,
             token: query.token,
         }
