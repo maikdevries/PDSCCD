@@ -83,7 +83,7 @@ impl Participant {
 
 #[derive(Debug)]
 pub struct Query {
-    pub nodes: Vec<usize>,
+    pub nodes: BTreeSet<usize>,
     pub target: usize,
     pub token: u128,
 }
@@ -91,7 +91,7 @@ pub struct Query {
 impl Query {
     pub fn new(target: usize, token: u128) -> Self {
         Self {
-            nodes: Vec::new(),
+            nodes: BTreeSet::new(),
             target,
             token,
         }
@@ -110,7 +110,7 @@ impl From<&Candidate> for Query {
 
 #[derive(Debug)]
 pub struct Candidate {
-    pub nodes: Vec<usize>,
+    pub nodes: BTreeSet<usize>,
     pub source: usize,
     pub target: usize,
     pub token: u128,
