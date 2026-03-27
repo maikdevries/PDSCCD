@@ -85,7 +85,12 @@ fn main() {
     println!("--- PARTICIPANT A END ---");
     let mut queue = VecDeque::from_iter(queries);
 
-    while let Some((id, queries)) = queue.pop_front() {
+    while let Some((id, mut queries)) = queue.pop_front() {
+        // [NOTE] Collect all consecutive 'requests' for same participant into single batch
+        while let Some((_, other_queries)) = queue.pop_front_if(|(other_id, _)| *other_id == id) {
+            queries.extend(other_queries);
+        }
+
         let participant = participants
             .get_mut(id)
             .expect("Participant must have known ID");
