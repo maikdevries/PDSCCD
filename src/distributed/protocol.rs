@@ -1,5 +1,5 @@
 use crate::distributed::core::{Location, Participant, Query};
-use std::collections::{HashMap, VecDeque};
+use std::collections::{BTreeSet, HashMap, VecDeque};
 
 pub struct Protocol {
     participants: HashMap<&'static str, Participant>,
@@ -14,7 +14,7 @@ impl Protocol {
         }
     }
 
-    pub fn run(&mut self, initiator: &'static str) {
+    pub fn run(&mut self, initiator: &'static str) -> Vec<BTreeSet<usize>> {
         self.prepare(initiator);
         return self.process();
     }
@@ -42,7 +42,9 @@ impl Protocol {
         self.queue.push_back((id, queries));
     }
 
-    fn process(&mut self) {
+    fn process(&mut self) -> Vec<BTreeSet<usize>> {
+        let mut results = Vec::new();
+
         while let Some((id, mut queries)) = self.queue.pop_front() {
             // [NOTE] Collect all consecutive 'requests' for same participant into single batch
             while let Some((_, other)) = self.queue.pop_front_if(|(other, _)| *other == id) {
@@ -71,6 +73,15 @@ impl Protocol {
 
             println!("--- PARTICIPANT {id} END ---");
             self.queue.extend(queries.into_iter());
+
+            results.extend(resolved.into_iter().map(|query| query.nodes));
+            results.extend(
+                components
+                    .into_iter()
+                    .map(|component| BTreeSet::from_iter(component)),
+            );
         }
+
+        return results;
     }
 }
