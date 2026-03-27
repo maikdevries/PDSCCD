@@ -14,7 +14,7 @@ impl Protocol {
         }
     }
 
-    pub fn run(&mut self, initiator: &'static str) -> Vec<BTreeSet<usize>> {
+    pub fn run(&mut self, initiator: &'static str) -> BTreeSet<BTreeSet<usize>> {
         self.prepare(initiator);
         return self.process();
     }
@@ -42,8 +42,8 @@ impl Protocol {
         self.queue.push_back((id, queries));
     }
 
-    fn process(&mut self) -> Vec<BTreeSet<usize>> {
-        let mut results = Vec::new();
+    fn process(&mut self) -> BTreeSet<BTreeSet<usize>> {
+        let mut results = BTreeSet::new();
 
         while let Some((id, mut queries)) = self.queue.pop_front() {
             // [NOTE] Collect all consecutive 'requests' for same participant into single batch
