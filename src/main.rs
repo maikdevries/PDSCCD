@@ -17,11 +17,14 @@
 
 // --- --- --- --- ---
 
-use pcd::distributed::core::{Graph, Location, Node, Participant, Query};
-use std::collections::{HashMap, VecDeque};
+use pcd::distributed::{
+    core::{Graph, Location, Node, Participant},
+    protocol::Protocol,
+};
+use std::collections::HashMap;
 
 fn main() {
-    let mut participants = HashMap::from([
+    let participants = HashMap::from([
         (
             "A",
             Participant::new(Graph::new(vec![
@@ -51,65 +54,5 @@ fn main() {
         ),
     ]);
 
-    let A = participants
-        .get_mut("A")
-        .expect("Participant must have known ID");
-
-    let queries = A
-        .graph
-        .nodes
-        .values()
-        .filter(|n| matches!(n.location, Location::External(_)) && n.neighbours.len() > 0)
-        .flat_map(|external| {
-            let token = rand::random::<u128>();
-            return external
-                .neighbours
-                .iter()
-                .map(move |&n| Query::new(n, token));
-        })
-        .collect();
-
-    println!("--- PARTICIPANT A START ---");
-
-    let (resolved, unresolved) = A.receive(queries);
-    println!("Resolved: {resolved:?}");
-    println!("Unresolved: {unresolved:?}");
-
-    let (components, candidates) = Participant::compute(&A.graph, unresolved);
-    println!("Components: {components:?}");
-    println!("Candidates: {candidates:?}");
-
-    let queries = A.send(candidates);
-    println!("Queries: {queries:?}");
-
-    println!("--- PARTICIPANT A END ---");
-    let mut queue = VecDeque::from_iter(queries);
-
-    while let Some((id, mut queries)) = queue.pop_front() {
-        // [NOTE] Collect all consecutive 'requests' for same participant into single batch
-        while let Some((_, other_queries)) = queue.pop_front_if(|(other_id, _)| *other_id == id) {
-            queries.extend(other_queries);
-        }
-
-        let participant = participants
-            .get_mut(id)
-            .expect("Participant must have known ID");
-
-        println!();
-        println!("--- PARTICIPANT {id} START ---");
-
-        let (resolved, unresolved) = participant.receive(queries);
-        println!("Resolved: {resolved:?}");
-        println!("Unresolved: {unresolved:?}");
-
-        let (components, candidates) = Participant::compute(&participant.graph, unresolved);
-        println!("Components: {components:?}");
-        println!("Candidates: {candidates:?}");
-
-        let queries = participant.send(candidates);
-        println!("Queries: {queries:?}");
-
-        println!("--- PARTICIPANT {id} END ---");
-        queue.extend(queries.into_iter());
-    }
+    Protocol::new(participants).run("A");
 }
