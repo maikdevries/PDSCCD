@@ -32,7 +32,7 @@ impl Participant {
             // [NOTE] Combine queries with same target and token into single query
             .fold(HashMap::new(), |mut map, query| {
                 map.entry((query.target, query.token))
-                    .and_modify(|existing: &mut Query| existing.path.extend(query.path.clone()))
+                    .and_modify(|existing: &mut Query| existing.nodes.extend(query.nodes.clone()))
                     .or_insert(query);
 
                 return map;
@@ -67,7 +67,7 @@ impl Participant {
                         .fold(HashMap::new(), |mut map, candidate| {
                             map.entry((candidate.target, candidate.token))
                                 .and_modify(|query: &mut Query| {
-                                    query.path.extend(candidate.path.clone())
+                                    query.nodes.extend(candidate.nodes.clone())
                                 })
                                 .or_insert_with(|| Query::from(&candidate));
 
@@ -83,7 +83,7 @@ impl Participant {
 
 #[derive(Debug)]
 pub struct Query {
-    pub path: Vec<usize>,
+    pub nodes: Vec<usize>,
     pub target: usize,
     pub token: u128,
 }
@@ -91,7 +91,7 @@ pub struct Query {
 impl Query {
     pub fn new(target: usize, token: u128) -> Self {
         Self {
-            path: Vec::new(),
+            nodes: Vec::new(),
             target,
             token,
         }
@@ -101,7 +101,7 @@ impl Query {
 impl From<&Candidate> for Query {
     fn from(candidate: &Candidate) -> Self {
         Self {
-            path: candidate.path.clone(),
+            nodes: candidate.nodes.clone(),
             target: candidate.target,
             token: candidate.token,
         }
@@ -110,7 +110,7 @@ impl From<&Candidate> for Query {
 
 #[derive(Debug)]
 pub struct Candidate {
-    pub path: Vec<usize>,
+    pub nodes: Vec<usize>,
     pub source: usize,
     pub target: usize,
     pub token: u128,
@@ -119,7 +119,7 @@ pub struct Candidate {
 impl Candidate {
     pub fn from(query: &Query, target: usize, path: &Vec<usize>) -> Self {
         Self {
-            path: query.path.iter().chain(path).copied().collect(),
+            nodes: query.nodes.iter().chain(path).copied().collect(),
             source: query.target,
             target: target,
             token: query.token,
