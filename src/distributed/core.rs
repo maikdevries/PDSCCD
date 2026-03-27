@@ -27,12 +27,23 @@ impl Participant {
     }
 
     pub fn receive(&self, queries: Vec<Query>) -> (Vec<Query>, Vec<Query>) {
-        return queries.into_iter().partition(|query| {
-            self.out
-                .get(&query.target)
-                .and_then(|tokens| tokens.get(&query.token))
-                .is_some()
-        });
+        return queries
+            .into_iter()
+            // [NOTE] Combine queries with same target and token into single query
+            .fold(HashMap::new(), |mut map, query| {
+                map.entry((query.target, query.token))
+                    .and_modify(|existing: &mut Query| existing.path.extend(query.path.clone()))
+                    .or_insert(query);
+
+                return map;
+            })
+            .into_values()
+            .partition(|query| {
+                self.out
+                    .get(&query.target)
+                    .and_then(|tokens| tokens.get(&query.token))
+                    .is_some()
+            });
     }
 
     pub fn send(
