@@ -81,11 +81,10 @@ impl Participant {
     }
 }
 
-#[derive(Debug)]
 pub struct Query {
     pub nodes: BTreeSet<usize>,
     pub target: usize,
-    pub token: u128,
+    token: u128,
 }
 
 impl Query {
@@ -108,12 +107,11 @@ impl From<&Candidate> for Query {
     }
 }
 
-#[derive(Debug)]
 pub struct Candidate {
-    pub nodes: BTreeSet<usize>,
-    pub source: usize,
-    pub target: usize,
-    pub token: u128,
+    nodes: BTreeSet<usize>,
+    source: usize,
+    target: usize,
+    token: u128,
 }
 
 impl Candidate {
@@ -140,7 +138,7 @@ impl Graph {
 }
 
 pub struct Node {
-    pub id: usize,
+    id: usize,
     pub location: Location,
     pub neighbours: BTreeSet<usize>,
 }
