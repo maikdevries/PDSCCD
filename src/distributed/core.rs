@@ -3,14 +3,14 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 pub struct Participant {
     pub graph: Graph,
-    out: BTreeMap<usize, BTreeSet<u128>>,
+    seen: BTreeMap<usize, BTreeSet<u128>>,
 }
 
 impl Participant {
     pub fn new(graph: Graph) -> Self {
         Self {
             graph,
-            out: BTreeMap::new(),
+            seen: BTreeMap::new(),
         }
     }
 
@@ -39,7 +39,7 @@ impl Participant {
             })
             .into_values()
             .partition(|query| {
-                self.out
+                self.seen
                     .get(&query.target)
                     .and_then(|tokens| tokens.get(&query.token))
                     .is_some()
@@ -58,7 +58,7 @@ impl Participant {
                     candidates
                         .into_iter()
                         .inspect(|candidate| {
-                            self.out
+                            self.seen
                                 .entry(candidate.source)
                                 .or_insert(BTreeSet::new())
                                 .insert(candidate.token);
