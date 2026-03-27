@@ -46,14 +46,23 @@ impl Participant {
                     participant,
                     candidates
                         .into_iter()
-                        .map(|candidate| {
+                        .inspect(|candidate| {
                             self.out
                                 .entry(candidate.source)
                                 .or_insert(BTreeSet::new())
                                 .insert(candidate.token);
-
-                            return Query::from(&candidate);
                         })
+                        // [NOTE] Combine candidates with same target and token into single query
+                        .fold(HashMap::new(), |mut map, candidate| {
+                            map.entry((candidate.target, candidate.token))
+                                .and_modify(|query: &mut Query| {
+                                    query.path.extend(candidate.path.clone())
+                                })
+                                .or_insert_with(|| Query::from(&candidate));
+
+                            return map;
+                        })
+                        .into_values()
                         .collect(),
                 )
             })
