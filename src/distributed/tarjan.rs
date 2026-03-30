@@ -39,22 +39,20 @@ impl<'a> Tarjan<'a> {
 
         self.stack.push(v);
 
-        // [PERF] Use reference to avoid expensive clone of neighbours
-        for w in self.graph.nodes[&v].neighbours.clone() {
-            if let Location::External(participant) = self.graph.nodes[&w].location
+        for w in self.graph.nodes[&v].neighbours.iter() {
+            if let Location::External(participant) = self.graph.nodes[w].location
                 && !self.stack.is_empty()
             {
                 self.candidates
                     .entry(participant)
                     .or_insert(Vec::new())
-                    .push(Candidate::from(query, w, &self.stack));
-            } else if !self.number.contains_key(&w) {
-                self.strong_connect(w, query);
+                    .push(Candidate::from(query, *w, &self.stack));
+            } else if !self.number.contains_key(w) {
+                self.strong_connect(*w, query);
                 self.lowlink
-                    .insert(v, self.lowlink[&v].min(self.lowlink[&w]));
-            } else if self.number[&w] < self.number[&v] && self.stack.contains(&w) {
-                self.lowlink
-                    .insert(v, self.lowlink[&v].min(self.number[&w]));
+                    .insert(v, self.lowlink[&v].min(self.lowlink[w]));
+            } else if self.number[w] < self.number[&v] && self.stack.contains(w) {
+                self.lowlink.insert(v, self.lowlink[&v].min(self.number[w]));
             }
         }
 
