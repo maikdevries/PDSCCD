@@ -1,8 +1,8 @@
-use crate::distributed::core::{Candidate, Graph, Location, Query};
+use crate::distributed::core::{Candidate, Component, Graph, Location, Query};
 use std::collections::{HashMap, HashSet};
 
 pub struct Tarjan<'a> {
-    components: Vec<HashSet<usize>>,
+    components: Vec<Component>,
     graph: &'a Graph,
     i: usize,
     lowlink: HashMap<usize, usize>,
@@ -27,7 +27,7 @@ impl<'a> Tarjan<'a> {
     pub fn detect(
         mut self,
         queries: Vec<Query>,
-    ) -> (Vec<HashSet<usize>>, HashMap<&'static str, Vec<Candidate>>) {
+    ) -> (Vec<Component>, HashMap<&'static str, Vec<Candidate>>) {
         for query in queries {
             self.strong_connect(query.target, &query);
         }

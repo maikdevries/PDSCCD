@@ -17,7 +17,7 @@ impl Participant {
     pub fn compute(
         graph: &Graph,
         queries: Vec<Query>,
-    ) -> (Vec<HashSet<usize>>, HashMap<&'static str, Vec<Candidate>>) {
+    ) -> (Vec<Component>, HashMap<&'static str, Vec<Candidate>>) {
         let (components, candidates) = Tarjan::new(graph).detect(queries);
 
         // [NOTE] Filter out trivial components (i.e. consist of a single node)
@@ -82,7 +82,7 @@ impl Participant {
 }
 
 pub struct Query {
-    pub nodes: HashSet<usize>,
+    pub nodes: Component,
     pub target: usize,
     token: u128,
 }
@@ -108,7 +108,7 @@ impl From<&Candidate> for Query {
 }
 
 pub struct Candidate {
-    nodes: HashSet<usize>,
+    nodes: Component,
     source: usize,
     target: usize,
     token: u128,
@@ -124,6 +124,8 @@ impl Candidate {
         }
     }
 }
+
+pub type Component = HashSet<usize>;
 
 pub struct Graph {
     pub nodes: HashMap<usize, Node>,

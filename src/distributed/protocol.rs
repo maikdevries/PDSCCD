@@ -1,5 +1,5 @@
-use crate::distributed::core::{Location, Participant, Query};
-use std::collections::{HashMap, HashSet, VecDeque};
+use crate::distributed::core::{Component, Location, Participant, Query};
+use std::collections::{HashMap, VecDeque};
 
 pub struct Protocol {
     participants: HashMap<&'static str, Participant>,
@@ -14,7 +14,7 @@ impl Protocol {
         }
     }
 
-    pub fn run(&mut self, initiator: &'static str) -> Vec<HashSet<usize>> {
+    pub fn run(&mut self, initiator: &'static str) -> Vec<Component> {
         let participant = self
             .participants
             .get(initiator)
@@ -42,7 +42,7 @@ impl Protocol {
             .collect();
     }
 
-    fn process(&mut self) -> Vec<HashSet<usize>> {
+    fn process(&mut self) -> Vec<Component> {
         let mut results = Vec::new();
 
         while let Some((id, mut queries)) = self.queue.pop_front() {
