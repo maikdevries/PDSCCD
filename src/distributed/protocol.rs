@@ -15,17 +15,19 @@ impl Protocol {
     }
 
     pub fn run(&mut self, initiator: &'static str) -> BTreeSet<BTreeSet<usize>> {
-        self.prepare(initiator);
+        let participant = self
+            .participants
+            .get(initiator)
+            .expect("Participant must have known ID");
+
+        self.queue
+            .push_back((initiator, Protocol::prepare(participant)));
+
         return self.process();
     }
 
-    fn prepare(&mut self, id: &'static str) {
-        let participant = self
-            .participants
-            .get(id)
-            .expect("Participant must have known ID");
-
-        let queries = participant
+    fn prepare(participant: &Participant) -> Vec<Query> {
+        return participant
             .graph
             .nodes
             .values()
@@ -38,8 +40,6 @@ impl Protocol {
                     .map(move |&n| Query::new(n, token));
             })
             .collect();
-
-        self.queue.push_back((id, queries));
     }
 
     fn process(&mut self) -> BTreeSet<BTreeSet<usize>> {
