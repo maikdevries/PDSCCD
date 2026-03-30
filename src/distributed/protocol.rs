@@ -1,20 +1,20 @@
-use crate::distributed::core::{Component, Location, Participant, Query};
+use crate::distributed::core::{Component, Location, PID, Participant, Query};
 use std::collections::{HashMap, VecDeque};
 
 pub struct Protocol {
-    participants: HashMap<&'static str, Participant>,
-    queue: VecDeque<(&'static str, Vec<Query>)>,
+    participants: HashMap<PID, Participant>,
+    queue: VecDeque<(PID, Vec<Query>)>,
 }
 
 impl Protocol {
-    pub fn new(participants: HashMap<&'static str, Participant>) -> Self {
+    pub fn new(participants: HashMap<PID, Participant>) -> Self {
         Self {
             participants,
             queue: VecDeque::new(),
         }
     }
 
-    pub fn run(&mut self, initiator: &'static str) -> Vec<Component> {
+    pub fn run(&mut self, initiator: PID) -> Vec<Component> {
         let participant = self
             .participants
             .get(initiator)

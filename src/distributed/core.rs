@@ -1,6 +1,8 @@
 use crate::distributed::tarjan::Tarjan;
 use std::collections::{HashMap, HashSet};
 
+pub type PID = &'static str;
+
 pub struct Participant {
     pub graph: Graph,
     seen: HashMap<usize, HashSet<u128>>,
@@ -17,7 +19,7 @@ impl Participant {
     pub fn compute(
         graph: &Graph,
         queries: Vec<Query>,
-    ) -> (Vec<Component>, HashMap<&'static str, Vec<Candidate>>) {
+    ) -> (Vec<Component>, HashMap<PID, Vec<Candidate>>) {
         let (components, candidates) = Tarjan::new(graph).detect(queries);
 
         // [NOTE] Filter out trivial components (i.e. consist of a single node)
@@ -46,10 +48,7 @@ impl Participant {
             });
     }
 
-    pub fn send(
-        &mut self,
-        candidates: HashMap<&'static str, Vec<Candidate>>,
-    ) -> HashMap<&'static str, Vec<Query>> {
+    pub fn send(&mut self, candidates: HashMap<PID, Vec<Candidate>>) -> HashMap<PID, Vec<Query>> {
         return candidates
             .into_iter()
             .map(|(participant, candidates)| {
@@ -156,6 +155,6 @@ impl Node {
 }
 
 pub enum Location {
-    External(&'static str),
+    External(PID),
     Internal,
 }
