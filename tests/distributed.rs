@@ -2,36 +2,36 @@ use pcd::distributed::{
     core::{Graph, Location, Node, Participant},
     protocol::Protocol,
 };
-use std::collections::HashMap;
 
 #[test]
 fn one_one_one() {
-    let participants = HashMap::from([
+    let participants = [
         (
             "A",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::Internal, vec![1]),
-                Node::new(1, Location::External("B"), vec![]),
-                Node::new(2, Location::External("C"), vec![0]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::Internal, [1]),
+                Node::new(1, Location::External("B"), []),
+                Node::new(2, Location::External("C"), [0]),
             ])),
         ),
         (
             "B",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![1]),
-                Node::new(1, Location::Internal, vec![2]),
-                Node::new(2, Location::External("C"), vec![]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), [1]),
+                Node::new(1, Location::Internal, [2]),
+                Node::new(2, Location::External("C"), []),
             ])),
         ),
         (
             "C",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![]),
-                Node::new(1, Location::External("B"), vec![2]),
-                Node::new(2, Location::Internal, vec![0]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), []),
+                Node::new(1, Location::External("B"), [2]),
+                Node::new(2, Location::Internal, [0]),
             ])),
         ),
-    ]);
+    ]
+    .into();
 
     let mut protocol = Protocol::new(participants);
 
@@ -45,35 +45,36 @@ fn one_one_one() {
 
 #[test]
 fn one_one_two() {
-    let participants = HashMap::from([
+    let participants = [
         (
             "A",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::Internal, vec![1, 2]),
-                Node::new(1, Location::External("B"), vec![]),
-                Node::new(2, Location::External("B"), vec![]),
-                Node::new(3, Location::External("C"), vec![0]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::Internal, [1, 2]),
+                Node::new(1, Location::External("B"), []),
+                Node::new(2, Location::External("B"), []),
+                Node::new(3, Location::External("C"), [0]),
             ])),
         ),
         (
             "B",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![1, 2]),
-                Node::new(1, Location::Internal, vec![3]),
-                Node::new(2, Location::Internal, vec![3]),
-                Node::new(3, Location::External("C"), vec![]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), [1, 2]),
+                Node::new(1, Location::Internal, [3]),
+                Node::new(2, Location::Internal, [3]),
+                Node::new(3, Location::External("C"), []),
             ])),
         ),
         (
             "C",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![]),
-                Node::new(1, Location::External("B"), vec![3]),
-                Node::new(2, Location::External("B"), vec![3]),
-                Node::new(3, Location::Internal, vec![0]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), []),
+                Node::new(1, Location::External("B"), [3]),
+                Node::new(2, Location::External("B"), [3]),
+                Node::new(3, Location::Internal, [0]),
             ])),
         ),
-    ]);
+    ]
+    .into();
 
     let mut protocol = Protocol::new(participants);
 
@@ -87,35 +88,36 @@ fn one_one_two() {
 
 #[test]
 fn one_two_one() {
-    let participants = HashMap::from([
+    let participants = [
         (
             "A",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::Internal, vec![2]),
-                Node::new(1, Location::Internal, vec![2]),
-                Node::new(2, Location::External("B"), vec![]),
-                Node::new(3, Location::External("C"), vec![0, 1]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::Internal, [2]),
+                Node::new(1, Location::Internal, [2]),
+                Node::new(2, Location::External("B"), []),
+                Node::new(3, Location::External("C"), [0, 1]),
             ])),
         ),
         (
             "B",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![2]),
-                Node::new(1, Location::External("A"), vec![2]),
-                Node::new(2, Location::Internal, vec![3]),
-                Node::new(3, Location::External("C"), vec![]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), [2]),
+                Node::new(1, Location::External("A"), [2]),
+                Node::new(2, Location::Internal, [3]),
+                Node::new(3, Location::External("C"), []),
             ])),
         ),
         (
             "C",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![]),
-                Node::new(1, Location::External("A"), vec![]),
-                Node::new(2, Location::External("B"), vec![3]),
-                Node::new(3, Location::Internal, vec![0, 1]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), []),
+                Node::new(1, Location::External("A"), []),
+                Node::new(2, Location::External("B"), [3]),
+                Node::new(3, Location::Internal, [0, 1]),
             ])),
         ),
-    ]);
+    ]
+    .into();
 
     let mut protocol = Protocol::new(participants);
 
@@ -129,38 +131,39 @@ fn one_two_one() {
 
 #[test]
 fn one_two_two() {
-    let participants = HashMap::from([
+    let participants = [
         (
             "A",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::Internal, vec![2, 3]),
-                Node::new(1, Location::Internal, vec![2, 3]),
-                Node::new(2, Location::External("B"), vec![]),
-                Node::new(3, Location::External("B"), vec![]),
-                Node::new(4, Location::External("C"), vec![0, 1]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::Internal, [2, 3]),
+                Node::new(1, Location::Internal, [2, 3]),
+                Node::new(2, Location::External("B"), []),
+                Node::new(3, Location::External("B"), []),
+                Node::new(4, Location::External("C"), [0, 1]),
             ])),
         ),
         (
             "B",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![2, 3]),
-                Node::new(1, Location::External("A"), vec![2, 3]),
-                Node::new(2, Location::Internal, vec![4]),
-                Node::new(3, Location::Internal, vec![4]),
-                Node::new(4, Location::External("C"), vec![]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), [2, 3]),
+                Node::new(1, Location::External("A"), [2, 3]),
+                Node::new(2, Location::Internal, [4]),
+                Node::new(3, Location::Internal, [4]),
+                Node::new(4, Location::External("C"), []),
             ])),
         ),
         (
             "C",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![]),
-                Node::new(1, Location::External("A"), vec![]),
-                Node::new(2, Location::External("B"), vec![4]),
-                Node::new(3, Location::External("B"), vec![4]),
-                Node::new(4, Location::Internal, vec![0, 1]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), []),
+                Node::new(1, Location::External("A"), []),
+                Node::new(2, Location::External("B"), [4]),
+                Node::new(3, Location::External("B"), [4]),
+                Node::new(4, Location::Internal, [0, 1]),
             ])),
         ),
-    ]);
+    ]
+    .into();
 
     let mut protocol = Protocol::new(participants);
 
@@ -174,35 +177,36 @@ fn one_two_two() {
 
 #[test]
 fn two_one_one() {
-    let participants = HashMap::from([
+    let participants = [
         (
             "A",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::Internal, vec![1]),
-                Node::new(1, Location::External("B"), vec![]),
-                Node::new(2, Location::External("C"), vec![0]),
-                Node::new(3, Location::External("C"), vec![0]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::Internal, [1]),
+                Node::new(1, Location::External("B"), []),
+                Node::new(2, Location::External("C"), [0]),
+                Node::new(3, Location::External("C"), [0]),
             ])),
         ),
         (
             "B",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![1]),
-                Node::new(1, Location::Internal, vec![2, 3]),
-                Node::new(2, Location::External("C"), vec![]),
-                Node::new(3, Location::External("C"), vec![]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), [1]),
+                Node::new(1, Location::Internal, [2, 3]),
+                Node::new(2, Location::External("C"), []),
+                Node::new(3, Location::External("C"), []),
             ])),
         ),
         (
             "C",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![]),
-                Node::new(1, Location::External("B"), vec![2, 3]),
-                Node::new(2, Location::Internal, vec![0]),
-                Node::new(3, Location::Internal, vec![0]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), []),
+                Node::new(1, Location::External("B"), [2, 3]),
+                Node::new(2, Location::Internal, [0]),
+                Node::new(3, Location::Internal, [0]),
             ])),
         ),
-    ]);
+    ]
+    .into();
 
     let mut protocol = Protocol::new(participants);
 
@@ -216,38 +220,39 @@ fn two_one_one() {
 
 #[test]
 fn two_one_two() {
-    let participants = HashMap::from([
+    let participants = [
         (
             "A",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::Internal, vec![1, 2]),
-                Node::new(1, Location::External("B"), vec![]),
-                Node::new(2, Location::External("B"), vec![]),
-                Node::new(3, Location::External("C"), vec![0]),
-                Node::new(4, Location::External("C"), vec![0]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::Internal, [1, 2]),
+                Node::new(1, Location::External("B"), []),
+                Node::new(2, Location::External("B"), []),
+                Node::new(3, Location::External("C"), [0]),
+                Node::new(4, Location::External("C"), [0]),
             ])),
         ),
         (
             "B",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![1, 2]),
-                Node::new(1, Location::Internal, vec![3, 4]),
-                Node::new(2, Location::Internal, vec![3, 4]),
-                Node::new(3, Location::External("C"), vec![]),
-                Node::new(4, Location::External("C"), vec![]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), [1, 2]),
+                Node::new(1, Location::Internal, [3, 4]),
+                Node::new(2, Location::Internal, [3, 4]),
+                Node::new(3, Location::External("C"), []),
+                Node::new(4, Location::External("C"), []),
             ])),
         ),
         (
             "C",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![]),
-                Node::new(1, Location::External("B"), vec![3, 4]),
-                Node::new(2, Location::External("B"), vec![3, 4]),
-                Node::new(3, Location::Internal, vec![0]),
-                Node::new(4, Location::Internal, vec![0]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), []),
+                Node::new(1, Location::External("B"), [3, 4]),
+                Node::new(2, Location::External("B"), [3, 4]),
+                Node::new(3, Location::Internal, [0]),
+                Node::new(4, Location::Internal, [0]),
             ])),
         ),
-    ]);
+    ]
+    .into();
 
     let mut protocol = Protocol::new(participants);
 
@@ -261,38 +266,39 @@ fn two_one_two() {
 
 #[test]
 fn two_two_one() {
-    let participants = HashMap::from([
+    let participants = [
         (
             "A",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::Internal, vec![2]),
-                Node::new(1, Location::Internal, vec![2]),
-                Node::new(2, Location::External("B"), vec![]),
-                Node::new(3, Location::External("C"), vec![0, 1]),
-                Node::new(4, Location::External("C"), vec![0, 1]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::Internal, [2]),
+                Node::new(1, Location::Internal, [2]),
+                Node::new(2, Location::External("B"), []),
+                Node::new(3, Location::External("C"), [0, 1]),
+                Node::new(4, Location::External("C"), [0, 1]),
             ])),
         ),
         (
             "B",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![2]),
-                Node::new(1, Location::External("A"), vec![2]),
-                Node::new(2, Location::Internal, vec![3, 4]),
-                Node::new(3, Location::External("C"), vec![]),
-                Node::new(4, Location::External("C"), vec![]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), [2]),
+                Node::new(1, Location::External("A"), [2]),
+                Node::new(2, Location::Internal, [3, 4]),
+                Node::new(3, Location::External("C"), []),
+                Node::new(4, Location::External("C"), []),
             ])),
         ),
         (
             "C",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![]),
-                Node::new(1, Location::External("A"), vec![]),
-                Node::new(2, Location::External("B"), vec![3, 4]),
-                Node::new(3, Location::Internal, vec![0, 1]),
-                Node::new(4, Location::Internal, vec![0, 1]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), []),
+                Node::new(1, Location::External("A"), []),
+                Node::new(2, Location::External("B"), [3, 4]),
+                Node::new(3, Location::Internal, [0, 1]),
+                Node::new(4, Location::Internal, [0, 1]),
             ])),
         ),
-    ]);
+    ]
+    .into();
 
     let mut protocol = Protocol::new(participants);
 
@@ -306,41 +312,42 @@ fn two_two_one() {
 
 #[test]
 fn two_two_two() {
-    let participants = HashMap::from([
+    let participants = [
         (
             "A",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::Internal, vec![2, 3]),
-                Node::new(1, Location::Internal, vec![2, 3]),
-                Node::new(2, Location::External("B"), vec![]),
-                Node::new(3, Location::External("B"), vec![]),
-                Node::new(4, Location::External("C"), vec![0, 1]),
-                Node::new(5, Location::External("C"), vec![0, 1]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::Internal, [2, 3]),
+                Node::new(1, Location::Internal, [2, 3]),
+                Node::new(2, Location::External("B"), []),
+                Node::new(3, Location::External("B"), []),
+                Node::new(4, Location::External("C"), [0, 1]),
+                Node::new(5, Location::External("C"), [0, 1]),
             ])),
         ),
         (
             "B",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![2, 3]),
-                Node::new(1, Location::External("A"), vec![2, 3]),
-                Node::new(2, Location::Internal, vec![4, 5]),
-                Node::new(3, Location::Internal, vec![4, 5]),
-                Node::new(4, Location::External("C"), vec![]),
-                Node::new(5, Location::External("C"), vec![]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), [2, 3]),
+                Node::new(1, Location::External("A"), [2, 3]),
+                Node::new(2, Location::Internal, [4, 5]),
+                Node::new(3, Location::Internal, [4, 5]),
+                Node::new(4, Location::External("C"), []),
+                Node::new(5, Location::External("C"), []),
             ])),
         ),
         (
             "C",
-            Participant::new(Graph::new(vec![
-                Node::new(0, Location::External("A"), vec![]),
-                Node::new(1, Location::External("A"), vec![]),
-                Node::new(2, Location::External("B"), vec![4, 5]),
-                Node::new(3, Location::External("B"), vec![4, 5]),
-                Node::new(4, Location::Internal, vec![0, 1]),
-                Node::new(5, Location::Internal, vec![0, 1]),
+            Participant::new(Graph::new([
+                Node::new(0, Location::External("A"), []),
+                Node::new(1, Location::External("A"), []),
+                Node::new(2, Location::External("B"), [4, 5]),
+                Node::new(3, Location::External("B"), [4, 5]),
+                Node::new(4, Location::Internal, [0, 1]),
+                Node::new(5, Location::Internal, [0, 1]),
             ])),
         ),
-    ]);
+    ]
+    .into();
 
     let mut protocol = Protocol::new(participants);
 

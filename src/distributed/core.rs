@@ -130,9 +130,9 @@ pub struct Graph {
 }
 
 impl Graph {
-    pub fn new(adjacency: Vec<Node>) -> Self {
+    pub fn new<const N: usize>(nodes: [Node; N]) -> Self {
         Self {
-            nodes: adjacency.into_iter().map(|n| (n.id, n)).collect(),
+            nodes: nodes.into_iter().map(|n| (n.id, n)).collect(),
         }
     }
 }
@@ -144,11 +144,11 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new(id: usize, location: Location, neighbours: Vec<usize>) -> Self {
+    pub fn new<const N: usize>(id: usize, location: Location, neighbours: [usize; N]) -> Self {
         Self {
             id,
             location,
-            neighbours: BTreeSet::from_iter(neighbours),
+            neighbours: neighbours.into(),
         }
     }
 }
