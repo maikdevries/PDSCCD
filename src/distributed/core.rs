@@ -1,23 +1,23 @@
 use crate::distributed::tarjan::Tarjan;
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{HashMap, HashSet};
 
 pub struct Participant {
     pub graph: Graph,
-    seen: BTreeMap<usize, BTreeSet<u128>>,
+    seen: HashMap<usize, HashSet<u128>>,
 }
 
 impl Participant {
     pub fn new(graph: Graph) -> Self {
         Self {
             graph,
-            seen: BTreeMap::new(),
+            seen: HashMap::new(),
         }
     }
 
     pub fn compute(
         graph: &Graph,
         queries: Vec<Query>,
-    ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
+    ) -> (Vec<HashSet<usize>>, HashMap<&'static str, Vec<Candidate>>) {
         let (components, candidates) = Tarjan::new(graph).detect(queries);
 
         // [NOTE] Filter out trivial components (i.e. consist of a single node)
@@ -60,7 +60,7 @@ impl Participant {
                         .inspect(|candidate| {
                             self.seen
                                 .entry(candidate.source)
-                                .or_insert(BTreeSet::new())
+                                .or_insert(HashSet::new())
                                 .insert(candidate.token);
                         })
                         // [NOTE] Combine candidates with same target and token into single query
@@ -82,7 +82,7 @@ impl Participant {
 }
 
 pub struct Query {
-    pub nodes: BTreeSet<usize>,
+    pub nodes: HashSet<usize>,
     pub target: usize,
     token: u128,
 }
@@ -90,7 +90,7 @@ pub struct Query {
 impl Query {
     pub fn new(target: usize, token: u128) -> Self {
         Self {
-            nodes: BTreeSet::new(),
+            nodes: HashSet::new(),
             target,
             token,
         }
@@ -108,7 +108,7 @@ impl From<&Candidate> for Query {
 }
 
 pub struct Candidate {
-    nodes: BTreeSet<usize>,
+    nodes: HashSet<usize>,
     source: usize,
     target: usize,
     token: u128,
@@ -126,7 +126,7 @@ impl Candidate {
 }
 
 pub struct Graph {
-    pub nodes: BTreeMap<usize, Node>,
+    pub nodes: HashMap<usize, Node>,
 }
 
 impl Graph {
@@ -140,7 +140,7 @@ impl Graph {
 pub struct Node {
     id: usize,
     pub location: Location,
-    pub neighbours: BTreeSet<usize>,
+    pub neighbours: HashSet<usize>,
 }
 
 impl Node {

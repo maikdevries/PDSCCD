@@ -1,12 +1,12 @@
 use crate::distributed::core::{Candidate, Graph, Location, Query};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{HashMap, HashSet};
 
 pub struct Tarjan<'a> {
-    components: Vec<Vec<usize>>,
+    components: Vec<HashSet<usize>>,
     graph: &'a Graph,
     i: usize,
-    lowlink: BTreeMap<usize, usize>,
-    number: BTreeMap<usize, usize>,
+    lowlink: HashMap<usize, usize>,
+    number: HashMap<usize, usize>,
     candidates: HashMap<&'static str, Vec<Candidate>>,
     stack: Vec<usize>,
 }
@@ -17,8 +17,8 @@ impl<'a> Tarjan<'a> {
             components: Vec::new(),
             graph,
             i: 0,
-            lowlink: BTreeMap::new(),
-            number: BTreeMap::new(),
+            lowlink: HashMap::new(),
+            number: HashMap::new(),
             candidates: HashMap::new(),
             stack: Vec::new(),
         }
@@ -27,7 +27,7 @@ impl<'a> Tarjan<'a> {
     pub fn detect(
         mut self,
         queries: Vec<Query>,
-    ) -> (Vec<Vec<usize>>, HashMap<&'static str, Vec<Candidate>>) {
+    ) -> (Vec<HashSet<usize>>, HashMap<&'static str, Vec<Candidate>>) {
         for query in queries {
             self.strong_connect(query.target, &query);
         }
@@ -55,7 +55,6 @@ impl<'a> Tarjan<'a> {
                 self.strong_connect(w, query);
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.lowlink[&w]));
-            // [PERF] Use sorted data structure to avoid expensive linear search per node
             } else if self.number[&w] < self.number[&v] && self.stack.contains(&w) {
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.number[&w]));
@@ -63,10 +62,10 @@ impl<'a> Tarjan<'a> {
         }
 
         if self.lowlink[&v] == self.number[&v] {
-            let mut scc = Vec::new();
+            let mut scc = HashSet::new();
 
             while let Some(w) = self.stack.pop_if(|w| self.number[w] >= self.number[&v]) {
-                scc.push(w);
+                scc.insert(w);
             }
 
             self.components.push(scc);

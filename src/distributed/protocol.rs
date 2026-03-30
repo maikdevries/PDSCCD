@@ -1,5 +1,5 @@
 use crate::distributed::core::{Location, Participant, Query};
-use std::collections::{BTreeSet, HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 pub struct Protocol {
     participants: HashMap<&'static str, Participant>,
@@ -14,7 +14,7 @@ impl Protocol {
         }
     }
 
-    pub fn run(&mut self, initiator: &'static str) -> BTreeSet<BTreeSet<usize>> {
+    pub fn run(&mut self, initiator: &'static str) -> Vec<HashSet<usize>> {
         let participant = self
             .participants
             .get(initiator)
@@ -42,8 +42,8 @@ impl Protocol {
             .collect();
     }
 
-    fn process(&mut self) -> BTreeSet<BTreeSet<usize>> {
-        let mut results = BTreeSet::new();
+    fn process(&mut self) -> Vec<HashSet<usize>> {
+        let mut results = Vec::new();
 
         while let Some((id, mut queries)) = self.queue.pop_front() {
             // [NOTE] Collect all consecutive 'requests' for same participant into single batch
@@ -72,16 +72,12 @@ impl Protocol {
             println!("Queries: {queries:?}");
 
             println!("--- PARTICIPANT {id} END ---");
-            self.queue.extend(queries.into_iter());
+            self.queue.extend(queries);
 
-            results.extend(resolved.into_iter().map(|query| query.nodes));
-            results.extend(
-                components
-                    .into_iter()
-                    .map(|component| BTreeSet::from_iter(component)),
-            );
+            results.extend(resolved.into_iter().map(|q| q.nodes).chain(components));
         }
 
+        results.dedup();
         return results;
     }
 }
