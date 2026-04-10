@@ -29,6 +29,15 @@ impl Crypto {
             point: cipher.message - self.private * cipher.randomness,
         }
     }
+
+    fn rerandomise(&self, cipher: &Ciphertext) -> Ciphertext {
+        let r = Scalar::random(&mut rand::rng());
+
+        Ciphertext {
+            randomness: cipher.randomness + r * G,
+            message: cipher.message + r * self.public,
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -86,6 +95,34 @@ mod tests {
 
         let cipher = scheme.encrypt(&message);
         let plain = scheme.decrypt(cipher);
+
+        assert_eq!(plain, message);
+    }
+
+    #[test]
+    fn rerandomise_indistinguishable() {
+        let value = rand::random::<u128>();
+        let message = Plaintext::from(value);
+
+        let scheme = Crypto::new();
+
+        let a = scheme.encrypt(&message);
+        let b = scheme.rerandomise(&a);
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn rerandomise_preserving() {
+        let value = rand::random::<u128>();
+        let message = Plaintext::from(value);
+
+        let scheme = Crypto::new();
+
+        let a = scheme.encrypt(&message);
+        let b = scheme.rerandomise(&a);
+
+        let plain = scheme.decrypt(b);
 
         assert_eq!(plain, message);
     }
