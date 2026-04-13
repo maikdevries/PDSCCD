@@ -41,14 +41,14 @@ impl Elliptic {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct Ciphertext {
-    randomness: RistrettoPoint,
-    message: RistrettoPoint,
+pub struct Ciphertext {
+    pub randomness: RistrettoPoint,
+    pub message: RistrettoPoint,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct Plaintext {
-    point: RistrettoPoint,
+pub struct Plaintext {
+    pub point: RistrettoPoint,
 }
 
 impl From<u128> for Plaintext {
