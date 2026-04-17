@@ -8,16 +8,18 @@ pub type Component = HashSet<NID>;
 #[derive(Debug)]
 pub struct Path {
     pub nodes: Component,
+    pub participant: PID,
     pub target: NID,
 }
 
 pub struct Tarjan<'a> {
     components: Vec<Component>,
+    exits: Vec<Path>,
     graph: &'a Graph,
     i: usize,
     lowlink: HashMap<NID, usize>,
     number: HashMap<NID, usize>,
-    paths: HashMap<PID, Vec<Path>>,
+    paths: HashMap<NID, Vec<Path>>,
     stack: Vec<NID>,
 }
 
@@ -25,6 +27,7 @@ impl<'a> Tarjan<'a> {
     pub fn new(graph: &'a Graph) -> Self {
         Self {
             components: Vec::new(),
+            exits: Vec::new(),
             graph: graph,
             i: 0,
             lowlink: HashMap::new(),
@@ -34,24 +37,14 @@ impl<'a> Tarjan<'a> {
         }
     }
 
-    pub fn detect(
-        mut self,
-        targets: Vec<NID>,
-    ) -> (Vec<Component>, HashMap<NID, HashMap<PID, Vec<Path>>>) {
-        let mut paths = HashMap::new();
-
+    pub fn detect(mut self, targets: HashSet<NID>) -> (Vec<Component>, HashMap<NID, Vec<Path>>) {
         // [TODO] Targets that connect to previously seen nodes should inherit paths
         for target in targets {
-            // [BUG] Check whether target has been computed already
-            if paths.contains_key(&target) {
-                continue;
-            }
-
             self.strong_connect(target);
-            paths.insert(target, self.paths.drain().collect());
+            self.paths.insert(target, self.exits.drain(..).collect());
         }
 
-        return (self.components, paths);
+        return (self.components, self.paths);
     }
 
     fn strong_connect(&mut self, v: NID) {
@@ -65,8 +58,9 @@ impl<'a> Tarjan<'a> {
             if let Location::External(participant) = self.graph.nodes[w].location
                 && !self.stack.is_empty()
             {
-                self.paths.entry(participant).or_default().push(Path {
+                self.exits.push(Path {
                     nodes: self.stack.iter().copied().collect(),
+                    participant: participant,
                     target: *w,
                 });
             } else if !self.number.contains_key(w) {

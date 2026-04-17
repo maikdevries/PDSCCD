@@ -12,7 +12,7 @@ pub struct Participant {
     pub graph: Graph,
     id: PID,
     // nonces: HashMap<u128, u128>,
-    paths: HashMap<NID, HashMap<PID, Vec<Path>>>,
+    paths: HashMap<NID, Vec<Path>>,
     tokens: HashMap<NID, Vec<Plaintext>>,
 }
 
@@ -36,7 +36,7 @@ impl Participant {
             .partition(|query| self.tokens.get(&query.target).is_some());
     }
 
-    pub fn detect(&mut self, targets: Vec<NID>) -> Vec<Component> {
+    pub fn detect(&mut self, targets: HashSet<NID>) -> Vec<Component> {
         let (components, paths) = Tarjan::new(&self.graph).detect(targets);
 
         // [NOTE]
@@ -69,49 +69,17 @@ impl Participant {
     }
 
     pub fn forward(&self, queries: Vec<Query>) -> HashMap<PID, Vec<Query>> {
-        // [NOTE]
         // [TODO] Combine query with same target and token into single query (?)
         // [TODO] Do not send queries straight back to originating participant
-        // return queries
-        //     .into_iter()
-        //     .flat_map(|query| {
-        //         return self
-        //             .paths
-        //             .get(&query.target)
-        //             .expect("Exit participant(s) must be known to forward")
-        //             .iter()
-        //             .map(move |(participant, paths)| {
-        //                 (
-        //                     *participant,
-        //                     paths
-        //                         .iter()
-        //                         .map(|path| Query {
-        //                             from: self.id,
-        //                             path: query.path.iter().chain(&path.nodes).copied().collect(),
-        //                             target: path.target,
-        //                             token: self.crypto.rerandomise(&query.token),
-        //                         })
-        //                         .collect(),
-        //                 )
-        //             });
-        //     })
-        //     .collect();
-
         return queries.into_iter().fold(HashMap::new(), |mut map, query| {
-            let paths = self
-                .paths
-                .get(&query.target)
-                .expect("Exit participant(s) must be known to forward");
-
-            for (participant, paths) in paths {
-                map.entry(participant)
-                    .or_default()
-                    .extend(paths.iter().map(|path| Query {
-                        from: self.id,
-                        path: query.path.iter().chain(&path.nodes).copied().collect(),
-                        target: path.target,
-                        token: self.crypto.rerandomise(&query.token),
-                    }));
+            // [NOTE]
+            for path in self.paths.get(&query.target).into_iter().flatten() {
+                map.entry(path.participant).or_default().push(Query {
+                    from: self.id,
+                    path: query.path.iter().chain(&path.nodes).copied().collect(),
+                    target: path.target,
+                    token: self.crypto.rerandomise(&query.token),
+                });
             }
 
             return map;
@@ -119,40 +87,37 @@ impl Participant {
     }
 
     pub fn request(&mut self, queries: Vec<Query>) -> HashMap<PID, Vec<Request>> {
-        // [NOTE]
         return queries.into_iter().fold(HashMap::new(), |mut map, query| {
+            // [NOTE]
             // [BUG] Other participant might be same as query origin
-            let other = self
+            if let Some(other) = self
                 .paths
                 .get(&query.target)
-                .expect("Query target must be known to decrypt")
-                .keys()
+                .into_iter()
+                .flatten()
                 .choose(&mut rand::rng())
-                .expect("Exit participant must be known to decrypt");
+            {
+                // [BUG] All decryption participants will receive same nonce
+                // [BUG] Query token is not re-randomised - linkable by query origin
+                // [TODO] Unnecessary to send complete ciphertext - only requires randomness
+                let request = Request {
+                    from: self.id,
+                    nonce: rand::random::<u128>(),
+                    token: query.token,
+                };
 
-            // [BUG] All decryption participants will receive same nonce
-            let nonce = rand::random::<u128>();
+                // [NOTE]
+                map.entry(query.from).or_default().push(request);
+                map.entry(other.participant).or_default().push(request);
 
-            // [NOTE]
-            // [TODO] Unnecessary to send full ciphertext
-            map.entry(query.from).or_default().push(Request {
-                from: self.id,
-                nonce: nonce,
-                token: query.token,
-            });
-            map.entry(other).or_default().push(Request {
-                from: self.id,
-                nonce: nonce,
-                token: query.token,
-            });
-
-            self.candidates.insert(
-                nonce,
-                Candidate {
-                    partials: [self.crypto.decrypt(&query.token)].into(),
-                    query: query,
-                },
-            );
+                self.candidates.insert(
+                    request.nonce,
+                    Candidate {
+                        partials: [self.crypto.decrypt(&query.token)].into(),
+                        query: query,
+                    },
+                );
+            }
 
             return map;
         });
@@ -225,7 +190,7 @@ pub struct Query {
 }
 
 // [TODO]
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Request {
     from: PID,
     nonce: u128,
