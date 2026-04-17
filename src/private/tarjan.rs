@@ -1,24 +1,24 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::private::core::{Graph, Location, PID};
+use crate::private::core::{Graph, Location, NID, PID};
 
-pub type Component = HashSet<usize>;
+pub type Component = HashSet<NID>;
 
 // [TODO]
 #[derive(Debug)]
 pub struct Path {
     pub nodes: Component,
-    pub target: usize,
+    pub target: NID,
 }
 
 pub struct Tarjan<'a> {
     components: Vec<Component>,
     graph: &'a Graph,
     i: usize,
-    lowlink: HashMap<usize, usize>,
-    number: HashMap<usize, usize>,
+    lowlink: HashMap<NID, usize>,
+    number: HashMap<NID, usize>,
     paths: HashMap<PID, Vec<Path>>,
-    stack: Vec<usize>,
+    stack: Vec<NID>,
 }
 
 impl<'a> Tarjan<'a> {
@@ -36,8 +36,8 @@ impl<'a> Tarjan<'a> {
 
     pub fn detect(
         mut self,
-        targets: Vec<usize>,
-    ) -> (Vec<Component>, HashMap<usize, HashMap<PID, Vec<Path>>>) {
+        targets: Vec<NID>,
+    ) -> (Vec<Component>, HashMap<NID, HashMap<PID, Vec<Path>>>) {
         let mut paths = HashMap::new();
 
         // [TODO] Targets that connect to previously seen nodes should inherit paths
@@ -54,7 +54,7 @@ impl<'a> Tarjan<'a> {
         return (self.components, paths);
     }
 
-    fn strong_connect(&mut self, v: usize) {
+    fn strong_connect(&mut self, v: NID) {
         self.i += 1;
         self.lowlink.insert(v, self.i);
         self.number.insert(v, self.i);

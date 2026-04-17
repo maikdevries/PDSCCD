@@ -12,8 +12,8 @@ pub struct Participant {
     pub graph: Graph,
     id: PID,
     // nonces: HashMap<u128, u128>,
-    paths: HashMap<usize, HashMap<PID, Vec<Path>>>,
-    tokens: HashMap<usize, Vec<Plaintext>>,
+    paths: HashMap<NID, HashMap<PID, Vec<Path>>>,
+    tokens: HashMap<NID, Vec<Plaintext>>,
 }
 
 impl Participant {
@@ -36,7 +36,7 @@ impl Participant {
             .partition(|query| self.tokens.get(&query.target).is_some());
     }
 
-    pub fn detect(&mut self, targets: Vec<usize>) -> Vec<Component> {
+    pub fn detect(&mut self, targets: Vec<NID>) -> Vec<Component> {
         let (components, paths) = Tarjan::new(&self.graph).detect(targets);
 
         // [NOTE]
@@ -207,6 +207,7 @@ impl Participant {
     }
 }
 
+pub type NID = usize;
 pub type PID = &'static str;
 
 struct Candidate {
@@ -219,7 +220,7 @@ struct Candidate {
 pub struct Query {
     pub from: PID,
     pub path: Component,
-    pub target: usize,
+    pub target: NID,
     pub token: Ciphertext,
 }
 
@@ -239,7 +240,7 @@ pub struct Response {
 }
 
 pub struct Graph {
-    pub nodes: HashMap<usize, Node>,
+    pub nodes: HashMap<NID, Node>,
 }
 
 impl Graph {
@@ -251,13 +252,13 @@ impl Graph {
 }
 
 pub struct Node {
-    id: usize,
+    id: NID,
     pub location: Location,
-    pub neighbours: HashSet<usize>,
+    pub neighbours: HashSet<NID>,
 }
 
 impl Node {
-    pub fn new<const N: usize>(id: usize, location: Location, neighbours: [usize; N]) -> Self {
+    pub fn new<const N: usize>(id: NID, location: Location, neighbours: [NID; N]) -> Self {
         Self {
             id,
             location,
