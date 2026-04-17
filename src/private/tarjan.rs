@@ -55,6 +55,7 @@ impl<'a> Tarjan<'a> {
         self.stack.push(v);
 
         for w in self.graph.nodes[&v].neighbours.iter() {
+            // [NOTE]
             if let Location::External(participant) = self.graph.nodes[w].location
                 && !self.stack.is_empty()
             {
@@ -63,18 +64,22 @@ impl<'a> Tarjan<'a> {
                     participant: participant,
                     target: *w,
                 });
+            // [NOTE]
             } else if !self.number.contains_key(w) {
                 self.strong_connect(*w);
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.lowlink[w]));
+            // [NOTE]
             } else if self.number[w] < self.number[&v] && self.stack.contains(w) {
                 self.lowlink.insert(v, self.lowlink[&v].min(self.number[w]));
             }
         }
 
+        // [NOTE]
         if self.lowlink[&v] == self.number[&v] {
             let mut scc = Vec::new();
 
+            // [NOTE]
             while let Some(w) = self.stack.pop_if(|w| self.number[w] >= self.number[&v]) {
                 scc.push(w);
             }

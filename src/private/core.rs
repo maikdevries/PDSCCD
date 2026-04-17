@@ -11,7 +11,6 @@ pub struct Participant {
     crypto: Threshold,
     pub graph: Graph,
     id: PID,
-    // nonces: HashMap<u128, u128>,
     paths: HashMap<NID, Vec<Path>>,
     tokens: HashMap<NID, Vec<Plaintext>>,
 }
@@ -28,9 +27,8 @@ impl Participant {
         }
     }
 
-    pub fn query(&self, queries: Vec<Query>) -> (Vec<Query>, Vec<Query>) {
+    pub fn receive(&self, queries: Vec<Query>) -> (Vec<Query>, Vec<Query>) {
         // [NOTE]
-        // [TODO] Combine queries with same target and token into single query (?)
         return queries
             .into_iter()
             .partition(|query| self.tokens.get(&query.target).is_some());
@@ -69,8 +67,7 @@ impl Participant {
     }
 
     pub fn forward(&self, queries: Vec<Query>) -> HashMap<PID, Vec<Query>> {
-        // [TODO] Combine query with same target and token into single query (?)
-        // [TODO] Do not send queries straight back to originating participant
+        // [TODO] Do not send queries straight back to query origin
         return queries.into_iter().fold(HashMap::new(), |mut map, query| {
             // [NOTE]
             for path in self.paths.get(&query.target).into_iter().flatten() {

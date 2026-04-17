@@ -120,7 +120,7 @@ impl Protocol {
             let responses = participant.decrypt(requests);
             println!("Responses: {responses:?}");
 
-            let (known, unknown) = participant.query(queries);
+            let (known, unknown) = participant.receive(queries);
             println!("Known: {known:?}");
             println!("Unknown: {unknown:?}");
 
