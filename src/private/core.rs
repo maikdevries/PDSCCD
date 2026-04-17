@@ -56,7 +56,7 @@ impl Participant {
                 [
                     Query {
                         from: self.id,
-                        path: HashSet::new(),
+                        path: vec![],
                         target: query.target,
                         token: self.crypto.encrypt(&token),
                     },
@@ -219,7 +219,7 @@ impl Graph {
 pub struct Node {
     id: NID,
     pub location: Location,
-    pub neighbours: HashSet<NID>,
+    pub neighbours: Vec<NID>,
 }
 
 impl Node {

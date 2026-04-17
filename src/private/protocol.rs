@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 
 use crate::private::{
     core::{Graph, Location, PID, Participant, Query, Request, Response},
@@ -73,7 +73,7 @@ impl Protocol {
                 external.neighbours.iter().map(|node| {
                     Message::Query(Query {
                         from: "",
-                        path: HashSet::new(),
+                        path: vec![],
                         target: *node,
                         token: Ciphertext::default(),
                     })

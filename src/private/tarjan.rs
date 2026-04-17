@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::private::core::{Graph, Location, NID, PID};
 
-pub type Component = HashSet<NID>;
+pub type Component = Vec<NID>;
 
 // [TODO]
 #[derive(Debug)]
@@ -59,7 +59,7 @@ impl<'a> Tarjan<'a> {
                 && !self.stack.is_empty()
             {
                 self.exits.push(Path {
-                    nodes: self.stack.iter().copied().collect(),
+                    nodes: self.stack.clone(),
                     participant: participant,
                     target: *w,
                 });
@@ -73,10 +73,10 @@ impl<'a> Tarjan<'a> {
         }
 
         if self.lowlink[&v] == self.number[&v] {
-            let mut scc = HashSet::new();
+            let mut scc = Vec::new();
 
             while let Some(w) = self.stack.pop_if(|w| self.number[w] >= self.number[&v]) {
-                scc.insert(w);
+                scc.push(w);
             }
 
             self.components.push(scc);
