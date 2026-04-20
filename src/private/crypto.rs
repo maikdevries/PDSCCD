@@ -84,16 +84,19 @@ impl Threshold {
     }
 
     pub fn combine(partials: Vec<Partial>, cipher: &Ciphertext) -> Plaintext {
-        let indices: Vec<Scalar> = partials
-            .iter()
-            .map(|partial| Scalar::from(partial.index as u128))
-            .collect();
+        // [NOTE]
+        let coefficients = Threshold::lagrange(
+            partials
+                .iter()
+                .map(|partial| Scalar::from(partial.index as u128))
+                .collect(),
+        );
 
         // [NOTE]
-        let secret = partials.into_iter().zip(&indices).fold(
+        let secret = partials.into_iter().zip(coefficients).fold(
             RistrettoPoint::default(),
-            |point, (partial, x)| {
-                return point + Threshold::lagrange(&indices, x) * partial.value;
+            |point, (partial, coefficient)| {
+                return point + coefficient * partial.value;
             },
         );
 
@@ -102,16 +105,20 @@ impl Threshold {
         }
     }
 
-    fn lagrange(indices: &[Scalar], x: &Scalar) -> Scalar {
-        let (numerator, denominator) =
-            indices
-                .iter()
-                .filter(|y| *y != x)
-                .fold((Scalar::ONE, Scalar::ONE), |(a, b), y| {
-                    return (a * -y, b * (x - y));
-                });
+    fn lagrange(indices: Vec<Scalar>) -> Vec<Scalar> {
+        return indices
+            .iter()
+            .map(|x| {
+                let (numerator, denominator) = indices.iter().filter(|y| *y != x).fold(
+                    (Scalar::ONE, Scalar::ONE),
+                    |(a, b), y| {
+                        return (a * -y, b * (x - y));
+                    },
+                );
 
-        return numerator * denominator.invert();
+                return numerator * denominator.invert();
+            })
+            .collect();
     }
 }
 
