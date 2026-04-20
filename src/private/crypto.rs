@@ -54,17 +54,15 @@ impl Share {
     fn new(coefficients: &[Scalar], index: usize) -> Self {
         let x = Scalar::from(index as u128);
 
-        let mut result = Scalar::ZERO;
-        let mut power = Scalar::ONE;
-
-        for coefficient in coefficients {
-            result += coefficient * power;
-            power *= x;
-        }
+        // [NOTE]
+        let secret = coefficients
+            .iter()
+            .rev()
+            .fold(Scalar::ZERO, |sum, coefficient| sum * x + coefficient);
 
         Share {
             index: index,
-            value: result,
+            value: secret,
         }
     }
 }
