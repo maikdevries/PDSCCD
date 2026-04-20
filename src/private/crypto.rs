@@ -11,10 +11,13 @@ pub struct Plaintext {
     point: RistrettoPoint,
 }
 
-impl From<u128> for Plaintext {
-    fn from(value: u128) -> Self {
+impl<T> From<T> for Plaintext
+where
+    T: Into<u128>,
+{
+    fn from(value: T) -> Self {
         Self {
-            point: RistrettoPoint::hash_from_bytes::<sha3::Sha3_512>(&value.to_ne_bytes()),
+            point: RistrettoPoint::hash_from_bytes::<sha3::Sha3_512>(&value.into().to_ne_bytes()),
         }
     }
 }
@@ -37,6 +40,7 @@ pub struct Threshold {
 impl Threshold {
     pub fn setup<const T: usize, const N: usize>() -> [Self; N] {
         // [NOTE]
+        // [BUG] Assert N >= T >= 2
         let coefficients = [0; T].map(|_| Scalar::random(&mut rand::rng()));
         let public = coefficients[0] * G;
 
@@ -85,6 +89,7 @@ impl Threshold {
 
     pub fn combine(partials: Vec<Partial>, cipher: &Ciphertext) -> Plaintext {
         // [NOTE]
+        // [BUG] Assert number of partials == T, else slice
         let coefficients = Threshold::lagrange(
             partials
                 .iter()
@@ -106,6 +111,7 @@ impl Threshold {
     }
 
     fn lagrange(indices: Vec<Scalar>) -> Vec<Scalar> {
+        // [PERF] Use Montgomery's batch inversion trick to reduce to single inversion
         return indices
             .iter()
             .map(|x| {
@@ -116,6 +122,7 @@ impl Threshold {
                     },
                 );
 
+                // [TODO] Assert denominator is non-zero
                 return numerator * denominator.invert();
             })
             .collect();
