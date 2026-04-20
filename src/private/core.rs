@@ -153,7 +153,7 @@ impl Participant {
             .fold(
                 (Vec::new(), Vec::new()),
                 |(mut components, mut queries), (tokens, candidate)| {
-                    let plain = Threshold::combine(&candidate.partials, candidate.query.token);
+                    let plain = Threshold::combine(candidate.partials, &candidate.query.token);
 
                     if tokens.contains(&plain) {
                         components.push(candidate.query.path);

@@ -24,27 +24,6 @@ pub struct Partial {
     value: RistrettoPoint,
 }
 
-impl Partial {
-    fn lagrange(indices: &[usize], index: usize) -> Scalar {
-        let x = Scalar::from(index as u128);
-
-        let mut numerator = Scalar::ONE;
-        let mut denominator = Scalar::ONE;
-
-        for &i in indices {
-            if i == index {
-                continue;
-            }
-
-            let y = Scalar::from(i as u128);
-            numerator *= -y;
-            denominator *= x - y;
-        }
-
-        return numerator * denominator.invert();
-    }
-}
-
 struct Share {
     index: usize,
     value: Scalar,
@@ -104,19 +83,35 @@ impl Threshold {
         }
     }
 
-    pub fn combine(partials: &[Partial], cipher: Ciphertext) -> Plaintext {
-        let indices: Vec<usize> = partials.iter().map(|partial| partial.index).collect();
+    pub fn combine(partials: Vec<Partial>, cipher: &Ciphertext) -> Plaintext {
+        let indices: Vec<Scalar> = partials
+            .iter()
+            .map(|partial| Scalar::from(partial.index as u128))
+            .collect();
 
         // [NOTE]
-        let secret = partials
-            .into_iter()
-            .fold(RistrettoPoint::default(), |point, partial| {
-                return point + Partial::lagrange(&indices, partial.index) * partial.value;
-            });
+        let secret = partials.into_iter().zip(&indices).fold(
+            RistrettoPoint::default(),
+            |point, (partial, x)| {
+                return point + Threshold::lagrange(&indices, x) * partial.value;
+            },
+        );
 
         Plaintext {
             point: cipher.message - secret,
         }
+    }
+
+    fn lagrange(indices: &[Scalar], x: &Scalar) -> Scalar {
+        let (numerator, denominator) =
+            indices
+                .iter()
+                .filter(|y| *y != x)
+                .fold((Scalar::ONE, Scalar::ONE), |(a, b), y| {
+                    return (a * -y, b * (x - y));
+                });
+
+        return numerator * denominator.invert();
     }
 }
 
@@ -173,7 +168,7 @@ mod tests {
             .map(|participant| participant.decrypt(&cipher))
             .collect();
 
-        let plain = Threshold::combine(&partials, cipher);
+        let plain = Threshold::combine(partials, &cipher);
 
         assert_eq!(plain, message);
     }
@@ -195,7 +190,7 @@ mod tests {
             .map(|participant| participant.decrypt(&cipher))
             .collect();
 
-        let plain = Threshold::combine(&partials, cipher);
+        let plain = Threshold::combine(partials, &cipher);
 
         assert_ne!(plain, message);
     }
@@ -242,7 +237,7 @@ mod tests {
             .map(|participant| participant.decrypt(&b))
             .collect();
 
-        let plain = Threshold::combine(&partials, b);
+        let plain = Threshold::combine(partials, &b);
 
         assert_eq!(plain, message);
     }
