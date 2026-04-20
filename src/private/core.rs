@@ -130,38 +130,40 @@ impl Participant {
     }
 
     pub fn combine(&mut self, responses: Vec<Response>) -> (Vec<Component>, Vec<Query>) {
-        for response in responses {
-            self.candidates
-                .get_mut(&response.nonce)
-                .expect("Response nonce must be known to combine partials")
-                .partials
-                .push(response.partial);
-        }
+        // [NOTE]
+        return responses
+            .into_iter()
+            .filter_map(|response| {
+                // [NOTE]
+                let candidate = self.candidates.get_mut(&response.nonce)?;
+                candidate.partials.push(response.partial);
 
-        let candidates: Vec<Candidate> = self
-            .candidates
-            .extract_if(|_, candidate| candidate.partials.len() >= 3)
-            .map(|(_, candidate)| candidate)
-            .collect();
+                // [NOTE]
+                if candidate.partials.len() < 3 {
+                    return None;
+                }
 
-        let mut components = Vec::new();
-        let mut queries = Vec::new();
+                // [NOTE]
+                return Some((
+                    self.tokens.get(&candidate.query.target)?,
+                    self.candidates.remove(&response.nonce)?,
+                ));
+            })
+            // [NOTE]
+            .fold(
+                (Vec::new(), Vec::new()),
+                |(mut components, mut queries), (tokens, candidate)| {
+                    let plain = Threshold::combine(&candidate.partials, candidate.query.token);
 
-        for candidate in candidates {
-            let plain = Threshold::combine(&candidate.partials, candidate.query.token);
-            let tokens = self
-                .tokens
-                .get(&candidate.query.target)
-                .expect("Candidate target must be known to combine");
+                    if tokens.contains(&plain) {
+                        components.push(candidate.query.path);
+                    } else {
+                        queries.push(candidate.query);
+                    }
 
-            if tokens.contains(&plain) {
-                components.push(candidate.query.path);
-            } else {
-                queries.push(candidate.query);
-            }
-        }
-
-        return (components, queries);
+                    return (components, queries);
+                },
+            );
     }
 }
 
