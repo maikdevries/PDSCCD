@@ -80,6 +80,7 @@ impl Participant {
     }
 }
 
+#[derive(Debug)]
 pub struct Query {
     pub nodes: Component,
     pub target: usize,
@@ -106,6 +107,7 @@ impl From<&Candidate> for Query {
     }
 }
 
+#[derive(Debug)]
 pub struct Candidate {
     nodes: Component,
     source: usize,
