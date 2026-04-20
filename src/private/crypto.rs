@@ -50,23 +50,6 @@ struct Share {
     value: Scalar,
 }
 
-impl Share {
-    fn new(coefficients: &[Scalar], index: usize) -> Self {
-        let x = Scalar::from(index as u128);
-
-        // [NOTE]
-        let secret = coefficients
-            .iter()
-            .rev()
-            .fold(Scalar::ZERO, |sum, coefficient| sum * x + coefficient);
-
-        Share {
-            index: index,
-            value: secret,
-        }
-    }
-}
-
 pub struct Threshold {
     private: Share,
     public: RistrettoPoint,
@@ -81,8 +64,19 @@ impl Threshold {
         // [NOTE]
         return std::array::from_fn(|i| Self {
             public: public,
-            private: Share::new(&coefficients, i + 1),
+            private: Share {
+                index: i + 1,
+                value: Threshold::horner(&coefficients, Scalar::from(i as u128 + 1)),
+            },
         });
+    }
+
+    fn horner(coefficients: &[Scalar], x: Scalar) -> Scalar {
+        // [NOTE]
+        return coefficients
+            .iter()
+            .rev()
+            .fold(Scalar::ZERO, |sum, coefficient| sum * x + coefficient);
     }
 
     pub fn encrypt(&self, message: &Plaintext) -> Ciphertext {
