@@ -114,12 +114,13 @@ impl Threshold {
 
     pub fn combine(partials: &[Partial], cipher: Ciphertext) -> Plaintext {
         let indices: Vec<usize> = partials.iter().map(|partial| partial.index).collect();
-        let mut secret = RistrettoPoint::default();
 
-        for partial in partials {
-            let lambda = Partial::lagrange(&indices, partial.index);
-            secret += lambda * partial.value;
-        }
+        // [NOTE]
+        let secret = partials
+            .into_iter()
+            .fold(RistrettoPoint::default(), |point, partial| {
+                return point + Partial::lagrange(&indices, partial.index) * partial.value;
+            });
 
         Plaintext {
             point: cipher.message - secret,
