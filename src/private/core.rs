@@ -44,25 +44,21 @@ impl Participant {
         return components.into_iter().filter(|c| c.len() > 1).collect();
     }
 
-    pub fn register(&mut self, queries: Vec<Query>) -> Vec<Query> {
-        return queries
+    pub fn register(&mut self, nodes: HashSet<NID>) -> Vec<Query> {
+        // [NOTE]
+        return nodes
             .into_iter()
-            .flat_map(|query| {
-                let token = Plaintext::from(rand::random::<u128>());
-                self.tokens.entry(query.target).or_default().push(token);
+            .map(|node| {
+                let message = Plaintext::from(rand::random::<u128>());
+                self.tokens.entry(node).or_default().push(message);
 
-                [
-                    Query {
-                        from: self.id,
-                        path: vec![],
-                        target: query.target,
-                        token: self.crypto.encrypt(&token),
-                    },
-                    query,
-                ]
+                return Query {
+                    from: self.id,
+                    path: [].into(),
+                    target: node,
+                    token: self.crypto.encrypt(&message),
+                };
             })
-            // [TODO] Filter out initial Query
-            .filter(|query| !query.from.is_empty())
             .collect();
     }
 

@@ -69,6 +69,7 @@ impl Protocol {
             .nodes
             .values()
             .filter(|n| matches!(n.location, Location::External(_)) && n.neighbours.len() > 0)
+            // [BUG] Creates unnecessary duplicate queries - some external nodes might share targets
             .flat_map(|external| {
                 external.neighbours.iter().map(|node| {
                     Message::Query(Query {
@@ -81,18 +82,6 @@ impl Protocol {
             })
             .collect();
     }
-
-    // [TODO]
-    // For each Query received on known target node, attempt to decrypt.
-    // When unsuccessful, shortcut to sending (known Paths - no need to send own queries again?).
-    //
-    // Compute SCCs originating in target node for remaining queries.
-    // Store reachability information for each target node.
-    //
-    // For each Query target -> exit: re-randomise token, extend path and update target.
-    // For each exit, create a new Query based on reachability information.
-    //
-    // Store all new tokens on the target nodes.
 
     fn process(&mut self) -> Vec<Component> {
         let mut components = Vec::new();
@@ -113,28 +102,43 @@ impl Protocol {
             println!();
             println!("--- PARTICIPANT {id} START ---");
 
+            // [NOTE]
             let (complete, incomplete) = participant.combine(responses);
             println!("Complete: {complete:?}");
             println!("Incomplete: {incomplete:?}");
 
+            // [NOTE]
             let responses = participant.decrypt(requests);
             println!("Responses: {responses:?}");
 
+            // [NOTE]
             let (known, unknown) = participant.receive(queries);
             println!("Known: {known:?}");
             println!("Unknown: {unknown:?}");
 
+            // [NOTE]
+            let requests = participant.request(known);
+            println!("Requests: {requests:?}");
+
+            // [NOTE]
             let detected = participant.detect(unknown.iter().map(|query| query.target).collect());
             println!("Detected: {detected:?}");
 
-            let registered = participant.register(unknown);
+            // [NOTE]
+            let registered =
+                participant.register(unknown.iter().map(|query| query.target).collect());
             println!("Registered: {registered:?}");
 
-            let queries = participant.forward(incomplete.into_iter().chain(registered).collect());
+            // [NOTE]
+            let queries = participant.forward(
+                incomplete
+                    .into_iter()
+                    // [NOTE]
+                    .chain(unknown.into_iter().filter(|query| !query.from.is_empty()))
+                    .chain(registered)
+                    .collect(),
+            );
             println!("Queries: {queries:?}");
-
-            let requests = participant.request(known);
-            println!("Requests: {requests:?}");
 
             println!("--- PARTICIPANT {id} END ---");
 
