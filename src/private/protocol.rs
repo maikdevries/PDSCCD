@@ -51,7 +51,7 @@ impl Protocol {
         }
     }
 
-    pub fn run(&mut self, initiator: PID) -> Vec<Component> {
+    pub fn run(&mut self, initiator: PID) -> HashMap<PID, Vec<Component>> {
         let participant = self
             .participants
             .get(initiator)
@@ -83,8 +83,8 @@ impl Protocol {
             .collect();
     }
 
-    fn process(&mut self) -> Vec<Component> {
-        let mut components = Vec::new();
+    fn process(&mut self) -> HashMap<PID, Vec<Component>> {
+        let mut components: HashMap<PID, Vec<Component>> = HashMap::new();
 
         while let Some((id, mut messages)) = self.queue.pop_front() {
             // [NOTE] Collect all consecutive requests for same participant into single batch
@@ -143,7 +143,7 @@ impl Protocol {
             println!("--- PARTICIPANT {id} END ---");
 
             // [NOTE]
-            components.extend(detected);
+            components.entry(id).or_default().extend(complete);
             self.queue
                 .extend(Protocol::wrap(queries, requests, responses));
         }
