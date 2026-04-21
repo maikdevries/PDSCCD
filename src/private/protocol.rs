@@ -148,7 +148,6 @@ impl Protocol {
                 .extend(Protocol::wrap(queries, requests, responses));
         }
 
-        // results.dedup();
         return components;
     }
 
