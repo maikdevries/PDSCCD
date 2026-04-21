@@ -14,7 +14,6 @@ pub struct Path {
 
 pub struct Tarjan<'a> {
     components: Vec<Component>,
-    exits: Vec<Path>,
     graph: &'a Graph,
     i: usize,
     lowlink: HashMap<NID, usize>,
@@ -27,7 +26,6 @@ impl<'a> Tarjan<'a> {
     pub fn new(graph: &'a Graph) -> Self {
         Self {
             components: Vec::new(),
-            exits: Vec::new(),
             graph: graph,
             i: 0,
             lowlink: HashMap::new(),
@@ -38,13 +36,19 @@ impl<'a> Tarjan<'a> {
     }
 
     pub fn detect(mut self, targets: HashSet<NID>) -> (Vec<Component>, HashMap<NID, Vec<Path>>) {
-        // [TODO] Targets that connect to previously seen nodes should inherit paths
-        for target in targets {
-            self.strong_connect(target);
-            self.paths.insert(target, self.exits.drain(..).collect());
+        for target in &targets {
+            if !self.number.contains_key(target) {
+                self.strong_connect(*target);
+            }
         }
 
-        return (self.components, self.paths);
+        // [NOTE]
+        return (
+            self.components,
+            self.paths
+                .extract_if(|node, _| targets.contains(node))
+                .collect(),
+        );
     }
 
     fn strong_connect(&mut self, v: NID) {
@@ -56,19 +60,46 @@ impl<'a> Tarjan<'a> {
 
         for w in self.graph.nodes[&v].neighbours.iter() {
             // [NOTE]
-            if let Location::External(participant) = self.graph.nodes[w].location
-                && !self.stack.is_empty()
-            {
-                self.exits.push(Path {
-                    nodes: self.stack.clone(),
+            if let Location::External(participant) = self.graph.nodes[w].location {
+                self.paths.entry(v).or_default().push(Path {
+                    nodes: [v].into(),
                     participant: participant,
                     target: *w,
                 });
+
+            // [NOTE]
+            } else if self.paths.contains_key(w) {
+                let paths: Vec<Path> = self.paths[w]
+                    .iter()
+                    .map(|path| Path {
+                        nodes: [v].iter().chain(&path.nodes).copied().collect(),
+                        participant: path.participant,
+                        target: path.target,
+                    })
+                    .collect();
+
+                self.paths.entry(v).or_default().extend(paths);
+
             // [NOTE]
             } else if !self.number.contains_key(w) {
                 self.strong_connect(*w);
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.lowlink[w]));
+
+                // [NOTE]
+                if self.paths.contains_key(w) {
+                    let paths: Vec<Path> = self.paths[w]
+                        .iter()
+                        .map(|path| Path {
+                            nodes: [v].iter().chain(&path.nodes).copied().collect(),
+                            participant: path.participant,
+                            target: path.target,
+                        })
+                        .collect();
+
+                    self.paths.entry(v).or_default().extend(paths);
+                }
+
             // [NOTE]
             } else if self.number[w] < self.number[&v] && self.stack.contains(w) {
                 self.lowlink.insert(v, self.lowlink[&v].min(self.number[w]));
