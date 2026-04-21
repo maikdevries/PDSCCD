@@ -199,6 +199,7 @@ pub struct Response {
     partial: Partial,
 }
 
+#[derive(Clone)]
 pub struct Graph {
     pub nodes: HashMap<NID, Node>,
 }
@@ -211,6 +212,7 @@ impl Graph {
     }
 }
 
+#[derive(Clone)]
 pub struct Node {
     id: NID,
     pub location: Location,
@@ -227,6 +229,7 @@ impl Node {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum Location {
     External(PID),
     Internal,
