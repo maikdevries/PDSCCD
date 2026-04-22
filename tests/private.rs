@@ -4,6 +4,46 @@ use pcd::private::{
 };
 
 #[test]
+fn success() {
+    let participants = [
+        (
+            "A",
+            Graph::new([
+                Node::new(0, Location::External("C"), [1]),
+                Node::new(1, Location::Internal, [2]),
+                Node::new(2, Location::Internal, [3]),
+                Node::new(3, Location::External("B"), []),
+            ]),
+        ),
+        (
+            "B",
+            Graph::new([
+                Node::new(2, Location::External("A"), [3]),
+                Node::new(3, Location::Internal, [4]),
+                Node::new(4, Location::Internal, [5]),
+                Node::new(5, Location::External("C"), []),
+            ]),
+        ),
+        (
+            "C",
+            Graph::new([
+                Node::new(4, Location::External("B"), [5]),
+                Node::new(5, Location::Internal, [0]),
+                Node::new(0, Location::Internal, [1]),
+                Node::new(1, Location::External("A"), []),
+            ]),
+        ),
+    ];
+
+    let a = Protocol::new(participants.clone()).run("A", 6);
+    let b = Protocol::new(participants.clone()).run("B", 6);
+    let c = Protocol::new(participants).run("C", 6);
+
+    assert_eq!(a, b);
+    assert_eq!(b, c);
+}
+
+#[test]
 fn no_external_nodes() {
     let participants = [
         (
