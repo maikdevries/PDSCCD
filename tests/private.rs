@@ -29,9 +29,9 @@ fn no_external_nodes() {
         ),
     ];
 
-    let a = Protocol::new(participants.clone()).run("A");
-    let b = Protocol::new(participants.clone()).run("B");
-    let c = Protocol::new(participants).run("C");
+    let a = Protocol::new(participants.clone()).run("A", 6);
+    let b = Protocol::new(participants.clone()).run("B", 6);
+    let c = Protocol::new(participants).run("C", 6);
 
     assert!(a.values().all(|components| components.is_empty()));
     assert!(b.values().all(|components| components.is_empty()));
@@ -67,9 +67,9 @@ fn no_external_incoming() {
         ),
     ];
 
-    let a = Protocol::new(participants.clone()).run("A");
-    let b = Protocol::new(participants.clone()).run("B");
-    let c = Protocol::new(participants).run("C");
+    let a = Protocol::new(participants.clone()).run("A", 6);
+    let b = Protocol::new(participants.clone()).run("B", 6);
+    let c = Protocol::new(participants).run("C", 6);
 
     assert!(a.values().all(|components| components.is_empty()));
     assert!(b.values().all(|components| components.is_empty()));
@@ -105,9 +105,9 @@ fn no_external_outgoing() {
         ),
     ];
 
-    let a = Protocol::new(participants.clone()).run("A");
-    let b = Protocol::new(participants.clone()).run("B");
-    let c = Protocol::new(participants).run("C");
+    let a = Protocol::new(participants.clone()).run("A", 6);
+    let b = Protocol::new(participants.clone()).run("B", 6);
+    let c = Protocol::new(participants).run("C", 6);
 
     assert!(a.values().all(|components| components.is_empty()));
     assert!(b.values().all(|components| components.is_empty()));

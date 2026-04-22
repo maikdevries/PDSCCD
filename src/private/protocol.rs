@@ -51,7 +51,7 @@ impl Protocol {
         }
     }
 
-    pub fn run(&mut self, initiator: PID) -> HashMap<PID, Vec<Component>> {
+    pub fn run(&mut self, initiator: PID, ttl: usize) -> HashMap<PID, Vec<Component>> {
         let participant = self
             .participants
             .get(initiator)
@@ -60,7 +60,7 @@ impl Protocol {
         self.queue
             .push_back((initiator, Protocol::prepare(participant)));
 
-        return self.process();
+        return self.process(ttl);
     }
 
     fn prepare(participant: &Participant) -> Vec<Message> {
@@ -74,16 +74,17 @@ impl Protocol {
                 external.neighbours.iter().map(|node| {
                     Message::Query(Query {
                         from: "",
-                        path: vec![],
+                        path: Vec::new(),
                         target: *node,
                         token: Ciphertext::default(),
+                        ttl: 0,
                     })
                 })
             })
             .collect();
     }
 
-    fn process(&mut self) -> HashMap<PID, Vec<Component>> {
+    fn process(&mut self, ttl: usize) -> HashMap<PID, Vec<Component>> {
         let mut components: HashMap<PID, Vec<Component>> = HashMap::new();
 
         while let Some((id, mut messages)) = self.queue.pop_front() {
@@ -126,15 +127,14 @@ impl Protocol {
 
             // [NOTE]
             let registered =
-                participant.register(unknown.iter().map(|query| query.target).collect());
+                participant.register(unknown.iter().map(|query| query.target).collect(), ttl);
             println!("Registered: {registered:?}");
 
             // [NOTE]
             let queries = participant.forward(
                 incomplete
                     .into_iter()
-                    // [NOTE]
-                    .chain(unknown.into_iter().filter(|query| !query.from.is_empty()))
+                    .chain(unknown)
                     .chain(registered)
                     .collect(),
             );

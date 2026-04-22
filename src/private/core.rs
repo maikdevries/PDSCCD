@@ -44,7 +44,7 @@ impl Participant {
         return components.into_iter().filter(|c| c.len() > 1).collect();
     }
 
-    pub fn register(&mut self, nodes: HashSet<NID>) -> Vec<Query> {
+    pub fn register(&mut self, nodes: HashSet<NID>, ttl: usize) -> Vec<Query> {
         // [NOTE]
         return nodes
             .into_iter()
@@ -57,6 +57,7 @@ impl Participant {
                     path: [].into(),
                     target: node,
                     token: self.crypto.encrypt(&message),
+                    ttl: ttl,
                 };
             })
             .collect();
@@ -67,12 +68,15 @@ impl Participant {
         return queries.into_iter().fold(HashMap::new(), |mut map, query| {
             // [NOTE]
             for path in self.paths.get(&query.target).into_iter().flatten() {
-                map.entry(path.participant).or_default().push(Query {
-                    from: self.id,
-                    path: query.path.iter().chain(&path.nodes).copied().collect(),
-                    target: path.target,
-                    token: self.crypto.rerandomise(&query.token),
-                });
+                if let Some(ttl) = query.ttl.checked_sub(path.nodes.len()) {
+                    map.entry(path.participant).or_default().push(Query {
+                        from: self.id,
+                        path: query.path.iter().chain(&path.nodes).copied().collect(),
+                        target: path.target,
+                        token: self.crypto.rerandomise(&query.token),
+                        ttl: ttl,
+                    });
+                }
             }
 
             return map;
@@ -182,6 +186,7 @@ pub struct Query {
     pub path: Component,
     pub target: NID,
     pub token: Ciphertext,
+    pub ttl: usize,
 }
 
 // [TODO]

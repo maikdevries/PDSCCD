@@ -35,7 +35,7 @@ fn main() {
     ];
 
     let start = std::time::Instant::now();
-    let components = Protocol::new(participants).run("A");
+    let components = Protocol::new(participants).run("A", 6);
 
     println!();
     println!("Components: {components:?}");
