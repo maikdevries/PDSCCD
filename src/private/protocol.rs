@@ -8,6 +8,18 @@ use crate::private::{
 
 // ---
 
+#[cfg(debug_assertions)]
+macro_rules! debug_println {
+    ($( $args:expr ),*) => { println!( $( $args ),* ); }
+}
+
+#[cfg(not(debug_assertions))]
+macro_rules! debug_println {
+    ($( $args:expr ),*) => {
+        ()
+    };
+}
+
 impl std::fmt::Debug for Ciphertext {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Ciphertext")
@@ -100,35 +112,35 @@ impl Protocol {
 
             let (queries, requests, responses) = Protocol::unwrap(messages);
 
-            println!();
-            println!("--- PARTICIPANT {id} START ---");
+            debug_println!();
+            debug_println!("--- PARTICIPANT {id} START ---");
 
             // [NOTE]
             let (complete, incomplete) = participant.combine(responses);
-            println!("Complete: {complete:?}");
-            println!("Incomplete: {incomplete:?}");
+            debug_println!("Complete: {complete:?}");
+            debug_println!("Incomplete: {incomplete:?}");
 
             // [NOTE]
             let responses = participant.decrypt(requests);
-            println!("Responses: {responses:?}");
+            debug_println!("Responses: {responses:?}");
 
             // [NOTE]
             let (known, unknown) = participant.receive(queries);
-            println!("Known: {known:?}");
-            println!("Unknown: {unknown:?}");
+            debug_println!("Known: {known:?}");
+            debug_println!("Unknown: {unknown:?}");
 
             // [NOTE]
             let requests = participant.request(known);
-            println!("Requests: {requests:?}");
+            debug_println!("Requests: {requests:?}");
 
             // [NOTE]
             let detected = participant.detect(unknown.iter().map(|query| query.target).collect());
-            println!("Detected: {detected:?}");
+            debug_println!("Detected: {detected:?}");
 
             // [NOTE]
             let registered =
                 participant.register(unknown.iter().map(|query| query.target).collect(), ttl);
-            println!("Registered: {registered:?}");
+            debug_println!("Registered: {registered:?}");
 
             // [NOTE]
             let queries = participant.forward(
@@ -138,9 +150,9 @@ impl Protocol {
                     .chain(registered)
                     .collect(),
             );
-            println!("Queries: {queries:?}");
+            debug_println!("Queries: {queries:?}");
 
-            println!("--- PARTICIPANT {id} END ---");
+            debug_println!("--- PARTICIPANT {id} END ---");
 
             // [NOTE]
             components.entry(id).or_default().extend(complete);
