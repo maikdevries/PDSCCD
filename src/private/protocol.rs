@@ -2,8 +2,8 @@ use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::private::{
     core::{Graph, Location, PID, Participant, Query, Request, Response},
-    crypto::{Ciphertext, Partial, Plaintext, Threshold},
     tarjan::Component,
+    threshold::{Ciphertext, Partial, Plaintext, Threshold},
 };
 
 // ---

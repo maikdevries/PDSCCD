@@ -2,8 +2,8 @@ use rand::seq::IteratorRandom;
 use std::collections::{HashMap, HashSet};
 
 use crate::private::{
-    crypto::{Ciphertext, Partial, Plaintext, Threshold},
     tarjan::{Component, Path, Tarjan},
+    threshold::{Ciphertext, Partial, Plaintext, Threshold},
 };
 
 pub struct Participant {
@@ -70,6 +70,7 @@ impl Participant {
         return queries.into_iter().fold(HashMap::new(), |mut map, query| {
             // [NOTE]
             for path in self.paths.get(&query.target).into_iter().flatten() {
+                // [NOTE]
                 if let Some(size) = query.size.checked_sub(path.nodes.len()) {
                     map.entry(path.participant).or_default().push(Query {
                         from: self.id,
