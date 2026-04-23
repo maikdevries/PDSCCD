@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::private::{
     core::{Graph, Location, PID, Participant, Query, Request, Response},
@@ -83,17 +83,22 @@ impl Protocol {
             .graph
             .nodes
             .values()
-            .filter(|n| matches!(n.location, Location::External(_)) && n.neighbours.len() > 0)
-            // [BUG] Creates unnecessary duplicate queries - some external nodes might share targets
-            .flat_map(|external| {
-                external.neighbours.iter().map(|node| {
-                    Message::Query(Query {
-                        from: "",
-                        path: Vec::new(),
-                        size: 0,
-                        target: *node,
-                        token: Ciphertext::default(),
-                    })
+            // [NOTE]
+            .fold(HashSet::new(), |mut set, node| {
+                if matches!(node.location, Location::External(_)) {
+                    set.extend(&node.neighbours);
+                }
+
+                return set;
+            })
+            .into_iter()
+            .map(|node| {
+                Message::Query(Query {
+                    from: "",
+                    path: Vec::new(),
+                    size: 0,
+                    target: node,
+                    token: Ciphertext::default(),
                 })
             })
             .collect();
