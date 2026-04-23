@@ -10,12 +10,12 @@ use crate::private::{
 
 #[cfg(debug_assertions)]
 macro_rules! debug_println {
-    ($( $args:expr ),*) => { println!( $( $args ),* ); }
+    ($( $args:expr ), *) => { println!($( $args ), *) }
 }
 
 #[cfg(not(debug_assertions))]
 macro_rules! debug_println {
-    ($( $args:expr ),*) => {
+    ($( $args:expr ), *) => {
         ()
     };
 }
@@ -53,10 +53,13 @@ pub struct Protocol {
 
 impl Protocol {
     pub fn new<const N: usize>(participants: [(PID, usize, Graph); N]) -> Self {
+        // [NOTE]
+        let shares = Threshold::setup::<3, N>();
+
         Self {
             participants: participants
                 .into_iter()
-                .zip(Threshold::setup::<3, N>())
+                .zip(shares)
                 .map(|((id, size, graph), share)| (id, Participant::new(id, size, share, graph)))
                 .collect(),
             queue: VecDeque::new(),
