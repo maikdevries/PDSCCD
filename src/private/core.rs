@@ -12,17 +12,19 @@ pub struct Participant {
     pub graph: Graph,
     id: PID,
     paths: HashMap<NID, Vec<Path>>,
+    size: usize,
     tokens: HashMap<NID, Vec<Plaintext>>,
 }
 
 impl Participant {
-    pub fn new(id: PID, share: Threshold, graph: Graph) -> Self {
+    pub fn new(id: PID, size: usize, share: Threshold, graph: Graph) -> Self {
         Self {
             candidates: HashMap::new(),
             crypto: share,
             graph: graph,
             id: id,
             paths: HashMap::new(),
+            size: size,
             tokens: HashMap::new(),
         }
     }
@@ -44,7 +46,7 @@ impl Participant {
         return components.into_iter().filter(|c| c.len() > 1).collect();
     }
 
-    pub fn register(&mut self, nodes: HashSet<NID>, ttl: usize) -> Vec<Query> {
+    pub fn register(&mut self, nodes: HashSet<NID>) -> Vec<Query> {
         // [NOTE]
         return nodes
             .into_iter()
@@ -55,9 +57,9 @@ impl Participant {
                 return Query {
                     from: self.id,
                     path: [].into(),
+                    size: self.size,
                     target: node,
                     token: self.crypto.encrypt(&message),
-                    ttl: ttl,
                 };
             })
             .collect();
@@ -68,13 +70,13 @@ impl Participant {
         return queries.into_iter().fold(HashMap::new(), |mut map, query| {
             // [NOTE]
             for path in self.paths.get(&query.target).into_iter().flatten() {
-                if let Some(ttl) = query.ttl.checked_sub(path.nodes.len()) {
+                if let Some(size) = query.size.checked_sub(path.nodes.len()) {
                     map.entry(path.participant).or_default().push(Query {
                         from: self.id,
                         path: query.path.iter().chain(&path.nodes).copied().collect(),
+                        size: size,
                         target: path.target,
                         token: self.crypto.rerandomise(&query.token),
-                        ttl: ttl,
                     });
                 }
             }
@@ -184,9 +186,9 @@ struct Candidate {
 pub struct Query {
     pub from: PID,
     pub path: Component,
+    pub size: usize,
     pub target: NID,
     pub token: Ciphertext,
-    pub ttl: usize,
 }
 
 // [TODO]

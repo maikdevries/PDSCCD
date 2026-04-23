@@ -7,6 +7,7 @@ fn main() {
     let participants = [
         (
             "A",
+            6,
             Graph::new([
                 Node::new(0, Location::External("C"), [1]),
                 Node::new(1, Location::Internal, [2]),
@@ -16,6 +17,7 @@ fn main() {
         ),
         (
             "B",
+            6,
             Graph::new([
                 Node::new(2, Location::External("A"), [3]),
                 Node::new(3, Location::Internal, [4]),
@@ -25,6 +27,7 @@ fn main() {
         ),
         (
             "C",
+            6,
             Graph::new([
                 Node::new(4, Location::External("B"), [5]),
                 Node::new(5, Location::Internal, [0]),
@@ -35,7 +38,7 @@ fn main() {
     ];
 
     let start = std::time::Instant::now();
-    let components = Protocol::new(participants).run("A", 6);
+    let components = Protocol::new(participants).run("A");
 
     println!();
     println!("Components: {components:?}");

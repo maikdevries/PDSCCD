@@ -52,18 +52,18 @@ pub struct Protocol {
 }
 
 impl Protocol {
-    pub fn new<const N: usize>(participants: [(PID, Graph); N]) -> Self {
+    pub fn new<const N: usize>(participants: [(PID, usize, Graph); N]) -> Self {
         Self {
             participants: participants
                 .into_iter()
                 .zip(Threshold::setup::<3, N>())
-                .map(|((id, graph), share)| (id, Participant::new(id, share, graph)))
+                .map(|((id, size, graph), share)| (id, Participant::new(id, size, share, graph)))
                 .collect(),
             queue: VecDeque::new(),
         }
     }
 
-    pub fn run(&mut self, initiator: PID, ttl: usize) -> HashMap<PID, Vec<Component>> {
+    pub fn run(&mut self, initiator: PID) -> HashMap<PID, Vec<Component>> {
         let participant = self
             .participants
             .get(initiator)
@@ -72,7 +72,7 @@ impl Protocol {
         self.queue
             .push_back((initiator, Protocol::prepare(participant)));
 
-        return self.process(ttl);
+        return self.process();
     }
 
     fn prepare(participant: &Participant) -> Vec<Message> {
@@ -87,16 +87,16 @@ impl Protocol {
                     Message::Query(Query {
                         from: "",
                         path: Vec::new(),
+                        size: 0,
                         target: *node,
                         token: Ciphertext::default(),
-                        ttl: 0,
                     })
                 })
             })
             .collect();
     }
 
-    fn process(&mut self, ttl: usize) -> HashMap<PID, Vec<Component>> {
+    fn process(&mut self) -> HashMap<PID, Vec<Component>> {
         let mut components: HashMap<PID, Vec<Component>> = HashMap::new();
 
         while let Some((id, mut messages)) = self.queue.pop_front() {
@@ -139,7 +139,7 @@ impl Protocol {
 
             // [NOTE]
             let registered =
-                participant.register(unknown.iter().map(|query| query.target).collect(), ttl);
+                participant.register(unknown.iter().map(|query| query.target).collect());
             debug_println!("Registered: {registered:?}");
 
             // [NOTE]

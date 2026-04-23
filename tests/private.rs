@@ -8,6 +8,7 @@ fn success() {
     let participants = [
         (
             "A",
+            6,
             Graph::new([
                 Node::new(0, Location::External("C"), [1]),
                 Node::new(1, Location::Internal, [2]),
@@ -17,6 +18,7 @@ fn success() {
         ),
         (
             "B",
+            6,
             Graph::new([
                 Node::new(2, Location::External("A"), [3]),
                 Node::new(3, Location::Internal, [4]),
@@ -26,6 +28,7 @@ fn success() {
         ),
         (
             "C",
+            6,
             Graph::new([
                 Node::new(4, Location::External("B"), [5]),
                 Node::new(5, Location::Internal, [0]),
@@ -35,9 +38,9 @@ fn success() {
         ),
     ];
 
-    let a = Protocol::new(participants.clone()).run("A", 6);
-    let b = Protocol::new(participants.clone()).run("B", 6);
-    let c = Protocol::new(participants).run("C", 6);
+    let a = Protocol::new(participants.clone()).run("A");
+    let b = Protocol::new(participants.clone()).run("B");
+    let c = Protocol::new(participants).run("C");
 
     assert_eq!(a, b);
     assert_eq!(b, c);
@@ -48,6 +51,7 @@ fn no_external_nodes() {
     let participants = [
         (
             "A",
+            6,
             Graph::new([
                 Node::new(1, Location::Internal, [2]),
                 Node::new(2, Location::Internal, []),
@@ -55,6 +59,7 @@ fn no_external_nodes() {
         ),
         (
             "B",
+            6,
             Graph::new([
                 Node::new(3, Location::Internal, [4]),
                 Node::new(4, Location::Internal, []),
@@ -62,6 +67,7 @@ fn no_external_nodes() {
         ),
         (
             "C",
+            6,
             Graph::new([
                 Node::new(5, Location::Internal, [0]),
                 Node::new(0, Location::Internal, []),
@@ -69,9 +75,9 @@ fn no_external_nodes() {
         ),
     ];
 
-    let a = Protocol::new(participants.clone()).run("A", 6);
-    let b = Protocol::new(participants.clone()).run("B", 6);
-    let c = Protocol::new(participants).run("C", 6);
+    let a = Protocol::new(participants.clone()).run("A");
+    let b = Protocol::new(participants.clone()).run("B");
+    let c = Protocol::new(participants).run("C");
 
     assert!(a.values().all(|components| components.is_empty()));
     assert!(b.values().all(|components| components.is_empty()));
@@ -83,6 +89,7 @@ fn no_external_incoming() {
     let participants = [
         (
             "A",
+            6,
             Graph::new([
                 Node::new(1, Location::Internal, [2]),
                 Node::new(2, Location::Internal, [3]),
@@ -91,6 +98,7 @@ fn no_external_incoming() {
         ),
         (
             "B",
+            6,
             Graph::new([
                 Node::new(3, Location::Internal, [4]),
                 Node::new(4, Location::Internal, [5]),
@@ -99,6 +107,7 @@ fn no_external_incoming() {
         ),
         (
             "C",
+            6,
             Graph::new([
                 Node::new(5, Location::Internal, [0]),
                 Node::new(0, Location::Internal, [1]),
@@ -107,9 +116,9 @@ fn no_external_incoming() {
         ),
     ];
 
-    let a = Protocol::new(participants.clone()).run("A", 6);
-    let b = Protocol::new(participants.clone()).run("B", 6);
-    let c = Protocol::new(participants).run("C", 6);
+    let a = Protocol::new(participants.clone()).run("A");
+    let b = Protocol::new(participants.clone()).run("B");
+    let c = Protocol::new(participants).run("C");
 
     assert!(a.values().all(|components| components.is_empty()));
     assert!(b.values().all(|components| components.is_empty()));
@@ -121,6 +130,7 @@ fn no_external_outgoing() {
     let participants = [
         (
             "A",
+            6,
             Graph::new([
                 Node::new(0, Location::External("C"), [1]),
                 Node::new(1, Location::Internal, [2]),
@@ -129,6 +139,7 @@ fn no_external_outgoing() {
         ),
         (
             "B",
+            6,
             Graph::new([
                 Node::new(2, Location::External("A"), [3]),
                 Node::new(3, Location::Internal, [4]),
@@ -137,6 +148,7 @@ fn no_external_outgoing() {
         ),
         (
             "C",
+            6,
             Graph::new([
                 Node::new(4, Location::External("B"), [5]),
                 Node::new(5, Location::Internal, [0]),
@@ -145,9 +157,9 @@ fn no_external_outgoing() {
         ),
     ];
 
-    let a = Protocol::new(participants.clone()).run("A", 6);
-    let b = Protocol::new(participants.clone()).run("B", 6);
-    let c = Protocol::new(participants).run("C", 6);
+    let a = Protocol::new(participants.clone()).run("A");
+    let b = Protocol::new(participants.clone()).run("B");
+    let c = Protocol::new(participants).run("C");
 
     assert!(a.values().all(|components| components.is_empty()));
     assert!(b.values().all(|components| components.is_empty()));
@@ -159,6 +171,7 @@ fn time_to_live_exceeded() {
     let participants = [
         (
             "A",
+            5,
             Graph::new([
                 Node::new(0, Location::External("C"), [1]),
                 Node::new(1, Location::Internal, [2]),
@@ -168,6 +181,7 @@ fn time_to_live_exceeded() {
         ),
         (
             "B",
+            5,
             Graph::new([
                 Node::new(2, Location::External("A"), [3]),
                 Node::new(3, Location::Internal, [4]),
@@ -177,6 +191,7 @@ fn time_to_live_exceeded() {
         ),
         (
             "C",
+            5,
             Graph::new([
                 Node::new(4, Location::External("B"), [5]),
                 Node::new(5, Location::Internal, [0]),
@@ -186,9 +201,9 @@ fn time_to_live_exceeded() {
         ),
     ];
 
-    let a = Protocol::new(participants.clone()).run("A", 5);
-    let b = Protocol::new(participants.clone()).run("B", 5);
-    let c = Protocol::new(participants).run("C", 5);
+    let a = Protocol::new(participants.clone()).run("A");
+    let b = Protocol::new(participants.clone()).run("B");
+    let c = Protocol::new(participants).run("C");
 
     assert!(a.values().all(|components| components.is_empty()));
     assert!(b.values().all(|components| components.is_empty()));
