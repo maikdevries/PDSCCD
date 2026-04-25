@@ -1,26 +1,25 @@
-use rand::seq::IteratorRandom;
+use curve25519_dalek::Scalar;
 use std::collections::{HashMap, HashSet};
 
 use crate::private::{
+    crypto::{Ciphertext, Plaintext, STTP, Sealed, Unsealed},
     tarjan::{Component, Path, Tarjan},
-    threshold::{Ciphertext, Partial, Plaintext, Threshold},
 };
 
-pub struct Participant {
-    candidates: HashMap<u128, Candidate>,
-    crypto: Threshold,
+#[derive(Clone)]
+pub struct Participant<'a> {
+    crypto: &'a STTP,
     pub graph: Graph,
-    id: PID,
+    pub id: PID,
     paths: HashMap<NID, Vec<Path>>,
     size: usize,
     tokens: HashMap<NID, Vec<Plaintext>>,
 }
 
-impl Participant {
-    pub fn new(id: PID, size: usize, share: Threshold, graph: Graph) -> Self {
+impl<'a> Participant<'a> {
+    pub fn new(id: PID, size: usize, crypto: &'a STTP, graph: Graph) -> Self {
         Self {
-            candidates: HashMap::new(),
-            crypto: share,
+            crypto: crypto,
             graph: graph,
             id: id,
             paths: HashMap::new(),
@@ -66,7 +65,6 @@ impl Participant {
     }
 
     pub fn forward(&self, queries: Vec<Query>) -> HashMap<PID, Vec<Query>> {
-        // [TODO] Do not send queries straight back to query origin
         return queries.into_iter().fold(HashMap::new(), |mut map, query| {
             // [NOTE]
             for path in self.paths.get(&query.target).into_iter().flatten() {
@@ -86,101 +84,82 @@ impl Participant {
         });
     }
 
-    pub fn request(&mut self, queries: Vec<Query>) -> HashMap<PID, Vec<Request>> {
-        return queries.into_iter().fold(HashMap::new(), |mut map, query| {
-            // [NOTE]
-            // [BUG] Other participant might be same as query origin
-            if let Some(other) = self
-                .paths
-                .get(&query.target)
-                .into_iter()
-                .flatten()
-                .choose(&mut rand::rng())
-            {
-                // [BUG] All decryption participants will receive same nonce
-                // [BUG] Query token is not re-randomised - linkable by query origin
-                // [TODO] Unnecessary to send complete ciphertext - only requires randomness
-                let request = Request {
-                    from: self.id,
-                    nonce: rand::random::<u128>(),
-                    token: query.token,
-                };
-
-                // [NOTE]
-                map.entry(query.from).or_default().push(request);
-                map.entry(other.participant).or_default().push(request);
-
-                self.candidates.insert(
-                    request.nonce,
-                    Candidate {
-                        partials: [self.crypto.decrypt(&query.token)].into(),
-                        query: query,
-                    },
-                );
-            }
-
-            return map;
-        });
-    }
-
-    pub fn decrypt(&self, requests: Vec<Request>) -> HashMap<PID, Vec<Response>> {
-        return requests
-            .into_iter()
-            .fold(HashMap::new(), |mut map, request| {
-                map.entry(request.from).or_default().push(Response {
-                    nonce: request.nonce,
-                    partial: self.crypto.decrypt(&request.token),
-                });
-
+    pub fn decrypt(&self, queries: Vec<Query>) -> (Vec<Component>, Vec<Query>) {
+        // [NOTE]
+        let groups: HashMap<usize, Vec<Query>> =
+            queries.into_iter().fold(HashMap::new(), |mut map, query| {
+                map.entry(query.target).or_default().push(query);
                 return map;
             });
-    }
 
-    pub fn combine(&mut self, responses: Vec<Response>) -> (Vec<Component>, Vec<Query>) {
-        // [NOTE]
-        return responses
-            .into_iter()
-            .filter_map(|response| {
-                // [NOTE]
-                let candidate = self.candidates.get_mut(&response.nonce)?;
-                candidate.partials.push(response.partial);
+        let mut components = Vec::new();
+        let mut incomplete = Vec::new();
 
-                // [NOTE]
-                if candidate.partials.len() < 3 {
-                    return None;
-                }
+        for (node, queries) in groups {
+            let mut cache = HashMap::new();
 
-                // [NOTE]
-                return Some((
-                    self.tokens.get(&candidate.query.target)?,
-                    self.candidates.remove(&response.nonce)?,
-                ));
-            })
+            let alpha = Scalar::random(&mut rand::rng());
+            let beta = Scalar::random(&mut rand::rng());
+
             // [NOTE]
-            .fold(
-                (Vec::new(), Vec::new()),
-                |(mut components, mut queries), (tokens, candidate)| {
-                    let plain = Threshold::combine(candidate.partials, &candidate.query.token);
+            let seals = queries
+                .into_iter()
+                .map(|query| {
+                    let seal = Sealed {
+                        cipher: query.token * alpha,
+                        nonce: rand::random::<u128>(),
+                    };
 
-                    if tokens.contains(&plain) {
-                        components.push(candidate.query.path);
-                    } else {
-                        queries.push(candidate.query);
-                    }
+                    cache.insert(seal.nonce, query);
+                    return seal;
+                })
+                .collect();
 
-                    return (components, queries);
-                },
-            );
+            // [NOTE]
+            let blinds = self
+                .tokens
+                .get(&node)
+                .expect("Target node tokens must be known to decrypt")
+                .iter()
+                .map(|token| *token * beta)
+                .collect();
+
+            let (unsealed, blinds) = self.crypto.unseal(seals, blinds);
+
+            // [NOTE]
+            let unsealed: Vec<Unsealed> = unsealed
+                .into_iter()
+                .map(|unsealed| unsealed * beta)
+                .collect();
+
+            // [NOTE]
+            let blinds: Vec<Plaintext> = blinds.into_iter().map(|blind| blind * alpha).collect();
+
+            // [NOTE]
+            for unseal in unsealed {
+                if blinds.contains(&unseal.plain) {
+                    components.push(
+                        cache
+                            .remove(&unseal.nonce)
+                            .expect("Unsealed nonce must be known")
+                            .path,
+                    );
+                } else {
+                    incomplete.push(
+                        cache
+                            .remove(&unseal.nonce)
+                            .expect("Unsealed nonce must be known"),
+                    );
+                }
+            }
+        }
+
+        return (components, incomplete);
     }
 }
 
 pub type NID = usize;
 pub type PID = &'static str;
-
-struct Candidate {
-    partials: Vec<Partial>,
-    query: Query,
-}
 
 // [TODO]
 #[derive(Debug)]
@@ -190,21 +169,6 @@ pub struct Query {
     pub size: usize,
     pub target: NID,
     pub token: Ciphertext,
-}
-
-// [TODO]
-#[derive(Clone, Copy, Debug)]
-pub struct Request {
-    from: PID,
-    nonce: u128,
-    token: Ciphertext,
-}
-
-// [TODO]
-#[derive(Debug)]
-pub struct Response {
-    nonce: u128,
-    partial: Partial,
 }
 
 #[derive(Clone)]

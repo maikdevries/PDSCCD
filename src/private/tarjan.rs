@@ -5,7 +5,7 @@ use crate::private::core::{Graph, Location, NID, PID};
 pub type Component = Vec<NID>;
 
 // [TODO]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Path {
     pub nodes: Component,
     pub participant: PID,

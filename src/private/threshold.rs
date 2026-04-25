@@ -1,5 +1,21 @@
 use curve25519_dalek::{RistrettoPoint, Scalar, constants::RISTRETTO_BASEPOINT_POINT as G};
 
+// ---
+
+impl std::fmt::Debug for Ciphertext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return write!(f, "Ciphertext");
+    }
+}
+
+impl std::fmt::Debug for Plaintext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return write!(f, "Plaintext");
+    }
+}
+
+// ---
+
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct Ciphertext {
     randomness: RistrettoPoint,

@@ -1,9 +1,9 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::private::{
-    core::{Graph, Location, PID, Participant, Query, Request, Response},
+    core::{Location, PID, Participant, Query},
+    crypto::Ciphertext,
     tarjan::Component,
-    threshold::{Ciphertext, Partial, Plaintext, Threshold},
 };
 
 // ---
@@ -20,48 +20,17 @@ macro_rules! debug_println {
     };
 }
 
-impl std::fmt::Debug for Ciphertext {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Ciphertext")
-    }
-}
-
-impl std::fmt::Debug for Plaintext {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Plaintext")
-    }
-}
-
-impl std::fmt::Debug for Partial {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Partial")
-    }
-}
-
 // ---
 
-enum Message {
-    Query(Query),
-    Request(Request),
-    Response(Response),
+pub struct Protocol<'a> {
+    participants: HashMap<PID, Participant<'a>>,
+    queue: VecDeque<(PID, Vec<Query>)>,
 }
 
-pub struct Protocol {
-    participants: HashMap<PID, Participant>,
-    queue: VecDeque<(PID, Vec<Message>)>,
-}
-
-impl Protocol {
-    pub fn new<const N: usize>(participants: [(PID, usize, Graph); N]) -> Self {
-        // [NOTE]
-        let shares = Threshold::setup::<3, N>();
-
+impl<'a> Protocol<'a> {
+    pub fn new<const N: usize>(participants: [Participant<'a>; N]) -> Self {
         Self {
-            participants: participants
-                .into_iter()
-                .zip(shares)
-                .map(|((id, size, graph), share)| (id, Participant::new(id, size, share, graph)))
-                .collect(),
+            participants: participants.into_iter().map(|p| (p.id, p)).collect(),
             queue: VecDeque::new(),
         }
     }
@@ -78,7 +47,7 @@ impl Protocol {
         return self.process();
     }
 
-    fn prepare(participant: &Participant) -> Vec<Message> {
+    fn prepare(participant: &Participant) -> Vec<Query> {
         return participant
             .graph
             .nodes
@@ -92,14 +61,12 @@ impl Protocol {
                 return set;
             })
             .into_iter()
-            .map(|node| {
-                Message::Query(Query {
-                    from: "",
-                    path: Vec::new(),
-                    size: 0,
-                    target: node,
-                    token: Ciphertext::default(),
-                })
+            .map(|node| Query {
+                from: "",
+                path: Vec::new(),
+                size: 0,
+                target: node,
+                token: Ciphertext::default(),
             })
             .collect();
     }
@@ -107,10 +74,10 @@ impl Protocol {
     fn process(&mut self) -> HashMap<PID, Vec<Component>> {
         let mut components: HashMap<PID, Vec<Component>> = HashMap::new();
 
-        while let Some((id, mut messages)) = self.queue.pop_front() {
+        while let Some((id, mut queries)) = self.queue.pop_front() {
             // [NOTE] Collect all consecutive requests for same participant into single batch
             while let Some((_, next)) = self.queue.pop_front_if(|(next, _)| *next == id) {
-                messages.extend(next);
+                queries.extend(next);
             }
 
             let participant = self
@@ -118,19 +85,8 @@ impl Protocol {
                 .get_mut(id)
                 .expect("Participant must have known ID");
 
-            let (queries, requests, responses) = Protocol::unwrap(messages);
-
             debug_println!();
             debug_println!("--- PARTICIPANT {id} START ---");
-
-            // [NOTE]
-            let (complete, incomplete) = participant.combine(responses);
-            debug_println!("Complete: {complete:?}");
-            debug_println!("Incomplete: {incomplete:?}");
-
-            // [NOTE]
-            let responses = participant.decrypt(requests);
-            debug_println!("Responses: {responses:?}");
 
             // [NOTE]
             let (known, unknown) = participant.receive(queries);
@@ -138,8 +94,9 @@ impl Protocol {
             debug_println!("Unknown: {unknown:?}");
 
             // [NOTE]
-            let requests = participant.request(known);
-            debug_println!("Requests: {requests:?}");
+            let (complete, incomplete) = participant.decrypt(known);
+            debug_println!("Complete: {complete:?}");
+            debug_println!("Incomplete: {incomplete:?}");
 
             // [NOTE]
             let detected = participant.detect(unknown.iter().map(|query| query.target).collect());
@@ -164,57 +121,9 @@ impl Protocol {
 
             // [NOTE]
             components.entry(id).or_default().extend(complete);
-            self.queue
-                .extend(Protocol::wrap(queries, requests, responses));
+            self.queue.extend(queries);
         }
 
         return components;
-    }
-
-    fn unwrap(messages: Vec<Message>) -> (Vec<Query>, Vec<Request>, Vec<Response>) {
-        let mut queries = Vec::new();
-        let mut requests = Vec::new();
-        let mut responses = Vec::new();
-
-        for message in messages {
-            match message {
-                Message::Query(query) => queries.push(query),
-                Message::Request(request) => requests.push(request),
-                Message::Response(response) => responses.push(response),
-            }
-        }
-
-        return (queries, requests, responses);
-    }
-
-    fn wrap(
-        queries: HashMap<PID, Vec<Query>>,
-        requests: HashMap<PID, Vec<Request>>,
-        responses: HashMap<PID, Vec<Response>>,
-    ) -> HashMap<PID, Vec<Message>> {
-        let mut messages: HashMap<PID, Vec<Message>> = HashMap::new();
-
-        for (k, v) in queries {
-            messages
-                .entry(k)
-                .or_default()
-                .extend(v.into_iter().map(Message::Query));
-        }
-
-        for (k, v) in requests {
-            messages
-                .entry(k)
-                .or_default()
-                .extend(v.into_iter().map(Message::Request));
-        }
-
-        for (k, v) in responses {
-            messages
-                .entry(k)
-                .or_default()
-                .extend(v.into_iter().map(Message::Response));
-        }
-
-        return messages;
     }
 }
