@@ -1,38 +1,49 @@
 use pcd::private::{
-    core::{Graph, Location, Node},
+    core::{Graph, Location, Node, Participant},
+    crypto::STTP,
     protocol::Protocol,
 };
 
 fn main() {
+    let sttp = STTP::new();
+
     let participants = [
-        (
+        Participant::new(
             "A",
             6,
+            &sttp,
             Graph::new([
                 Node::new(0, Location::External("C"), [1]),
                 Node::new(1, Location::Internal, [2]),
                 Node::new(2, Location::Internal, [3]),
-                Node::new(3, Location::External("B"), []),
+                Node::new(3, Location::Internal, [4]),
+                Node::new(4, Location::External("B"), []),
+                Node::new(6, Location::External("C"), [7]),
+                Node::new(7, Location::Internal, [2]),
             ]),
         ),
-        (
+        Participant::new(
             "B",
             6,
+            &sttp,
             Graph::new([
-                Node::new(2, Location::External("A"), [3]),
-                Node::new(3, Location::Internal, [4]),
+                Node::new(3, Location::External("A"), [4]),
                 Node::new(4, Location::Internal, [5]),
-                Node::new(5, Location::External("C"), []),
+                Node::new(5, Location::Internal, [6]),
+                Node::new(6, Location::External("C"), [4]),
             ]),
         ),
-        (
+        Participant::new(
             "C",
             6,
+            &sttp,
             Graph::new([
-                Node::new(4, Location::External("B"), [5]),
-                Node::new(5, Location::Internal, [0]),
                 Node::new(0, Location::Internal, [1]),
                 Node::new(1, Location::External("A"), []),
+                Node::new(4, Location::External("B"), []),
+                Node::new(5, Location::External("B"), [6]),
+                Node::new(6, Location::Internal, [4, 7]),
+                Node::new(7, Location::External("A"), []),
             ]),
         ),
     ];
