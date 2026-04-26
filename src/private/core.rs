@@ -8,22 +8,22 @@ use crate::private::{
 
 #[derive(Clone)]
 pub struct Participant<'a> {
+    capacity: usize,
     crypto: &'a STTP,
     pub graph: Graph,
     pub id: PID,
     paths: HashMap<NID, Vec<Path>>,
-    size: usize,
     tokens: HashMap<NID, Vec<Plaintext>>,
 }
 
 impl<'a> Participant<'a> {
-    pub fn new(id: PID, size: usize, crypto: &'a STTP, graph: Graph) -> Self {
+    pub fn new(id: PID, graph: Graph, crypto: &'a STTP, capacity: usize) -> Self {
         Self {
+            capacity: capacity,
             crypto: crypto,
             graph: graph,
             id: id,
             paths: HashMap::new(),
-            size: size,
             tokens: HashMap::new(),
         }
     }
@@ -35,7 +35,7 @@ impl<'a> Participant<'a> {
             .partition(|query| self.tokens.get(&query.target).is_some());
     }
 
-    pub fn detect(&mut self, targets: HashSet<NID>) -> Vec<Component> {
+    pub fn detect(&mut self, targets: &HashSet<NID>) -> Vec<Component> {
         let (components, paths) = Tarjan::new(&self.graph).detect(targets);
 
         // [NOTE]
@@ -54,9 +54,9 @@ impl<'a> Participant<'a> {
                 self.tokens.entry(node).or_default().push(message);
 
                 return Query {
+                    capacity: self.capacity,
                     from: self.id,
-                    path: [].into(),
-                    size: self.size,
+                    path: Vec::new(),
                     target: node,
                     token: self.crypto.encrypt(&message),
                 };
@@ -69,11 +69,11 @@ impl<'a> Participant<'a> {
             // [NOTE]
             for path in self.paths.get(&query.target).into_iter().flatten() {
                 // [NOTE]
-                if let Some(size) = query.size.checked_sub(path.nodes.len()) {
+                if let Some(capacity) = query.capacity.checked_sub(path.nodes.len()) {
                     map.entry(path.participant).or_default().push(Query {
+                        capacity: capacity,
                         from: self.id,
                         path: query.path.iter().chain(&path.nodes).copied().collect(),
-                        size: size,
                         target: path.target,
                         token: self.crypto.rerandomise(&query.token),
                     });
@@ -106,7 +106,7 @@ impl<'a> Participant<'a> {
                 .into_iter()
                 .map(|query| {
                     let seal = Sealed {
-                        cipher: query.token * alpha,
+                        token: query.token * alpha,
                         nonce: rand::random::<u128>(),
                     };
 
@@ -137,7 +137,7 @@ impl<'a> Participant<'a> {
 
             // [NOTE]
             for unseal in unsealed {
-                if blinds.contains(&unseal.plain) {
+                if blinds.contains(&unseal.token) {
                     components.push(
                         cache
                             .remove(&unseal.nonce)
@@ -164,9 +164,9 @@ pub type PID = &'static str;
 // [TODO]
 #[derive(Debug)]
 pub struct Query {
+    pub capacity: usize,
     pub from: PID,
     pub path: Component,
-    pub size: usize,
     pub target: NID,
     pub token: Ciphertext,
 }
@@ -194,8 +194,8 @@ pub struct Node {
 impl Node {
     pub fn new<const N: usize>(id: NID, location: Location, neighbours: [NID; N]) -> Self {
         Self {
-            id,
-            location,
+            id: id,
+            location: location,
             neighbours: neighbours.into(),
         }
     }

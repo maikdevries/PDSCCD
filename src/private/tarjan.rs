@@ -35,8 +35,8 @@ impl<'a> Tarjan<'a> {
         }
     }
 
-    pub fn detect(mut self, targets: HashSet<NID>) -> (Vec<Component>, HashMap<NID, Vec<Path>>) {
-        for target in &targets {
+    pub fn detect(mut self, targets: &HashSet<NID>) -> (Vec<Component>, HashMap<NID, Vec<Path>>) {
+        for target in targets {
             if !self.number.contains_key(target) {
                 self.strong_connect(*target);
             }

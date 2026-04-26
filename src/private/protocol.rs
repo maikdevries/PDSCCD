@@ -62,9 +62,9 @@ impl<'a> Protocol<'a> {
             })
             .into_iter()
             .map(|node| Query {
+                capacity: 0,
                 from: "",
                 path: Vec::new(),
-                size: 0,
                 target: node,
                 token: Ciphertext::default(),
             })
@@ -98,13 +98,14 @@ impl<'a> Protocol<'a> {
             debug_println!("Complete: {complete:?}");
             debug_println!("Incomplete: {incomplete:?}");
 
+            let targets = unknown.iter().map(|query| query.target).collect();
+
             // [NOTE]
-            let detected = participant.detect(unknown.iter().map(|query| query.target).collect());
+            let detected = participant.detect(&targets);
             debug_println!("Detected: {detected:?}");
 
             // [NOTE]
-            let registered =
-                participant.register(unknown.iter().map(|query| query.target).collect());
+            let registered = participant.register(targets);
             debug_println!("Registered: {registered:?}");
 
             // [NOTE]

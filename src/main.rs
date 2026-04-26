@@ -10,8 +10,6 @@ fn main() {
     let participants = [
         Participant::new(
             "A",
-            6,
-            &sttp,
             Graph::new([
                 Node::new(0, Location::External("C"), [1]),
                 Node::new(1, Location::Internal, [2]),
@@ -21,22 +19,22 @@ fn main() {
                 Node::new(6, Location::External("C"), [7]),
                 Node::new(7, Location::Internal, [2]),
             ]),
+            &sttp,
+            6,
         ),
         Participant::new(
             "B",
-            6,
-            &sttp,
             Graph::new([
                 Node::new(3, Location::External("A"), [4]),
                 Node::new(4, Location::Internal, [5]),
                 Node::new(5, Location::Internal, [6]),
                 Node::new(6, Location::External("C"), [4]),
             ]),
+            &sttp,
+            6,
         ),
         Participant::new(
             "C",
-            6,
-            &sttp,
             Graph::new([
                 Node::new(0, Location::Internal, [1]),
                 Node::new(1, Location::External("A"), []),
@@ -45,6 +43,8 @@ fn main() {
                 Node::new(6, Location::Internal, [4, 7]),
                 Node::new(7, Location::External("A"), []),
             ]),
+            &sttp,
+            6,
         ),
     ];
 

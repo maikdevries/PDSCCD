@@ -35,7 +35,7 @@ impl std::ops::Mul<Scalar> for Ciphertext {
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Plaintext {
-    pub point: RistrettoPoint,
+    message: RistrettoPoint,
 }
 
 impl<T> From<T> for Plaintext
@@ -44,7 +44,7 @@ where
 {
     fn from(value: T) -> Self {
         Self {
-            point: RistrettoPoint::hash_from_bytes::<sha3::Sha3_512>(&value.into().to_ne_bytes()),
+            message: RistrettoPoint::hash_from_bytes::<sha3::Sha3_512>(&value.into().to_ne_bytes()),
         }
     }
 }
@@ -54,19 +54,19 @@ impl std::ops::Mul<Scalar> for Plaintext {
 
     fn mul(self, rhs: Scalar) -> Self::Output {
         Self {
-            point: self.point * rhs,
+            message: self.message * rhs,
         }
     }
 }
 
 pub struct Sealed {
-    pub cipher: Ciphertext,
     pub nonce: u128,
+    pub token: Ciphertext,
 }
 
 pub struct Unsealed {
     pub nonce: u128,
-    pub plain: Plaintext,
+    pub token: Plaintext,
 }
 
 impl std::ops::Mul<Scalar> for Unsealed {
@@ -75,7 +75,7 @@ impl std::ops::Mul<Scalar> for Unsealed {
     fn mul(self, rhs: Scalar) -> Self::Output {
         Self {
             nonce: self.nonce,
-            plain: self.plain * rhs,
+            token: self.token * rhs,
         }
     }
 }
@@ -95,12 +95,18 @@ impl STTP {
         }
     }
 
-    pub fn encrypt(&self, message: &Plaintext) -> Ciphertext {
+    pub fn encrypt(&self, plain: &Plaintext) -> Ciphertext {
         let r = Scalar::random(&mut rand::rng());
 
         Ciphertext {
-            message: message.point + r * self.public,
+            message: plain.message + r * self.public,
             randomness: r * G,
+        }
+    }
+
+    fn decrypt(&self, cipher: &Ciphertext) -> Plaintext {
+        Plaintext {
+            message: cipher.message - self.secret * cipher.randomness,
         }
     }
 
@@ -120,22 +126,18 @@ impl STTP {
     ) -> (Vec<Unsealed>, Vec<Plaintext>) {
         let r = Scalar::random(&mut rand::rng());
 
+        // [NOTE]
         let unsealed = seals
             .into_iter()
             .map(|seal| Unsealed {
                 nonce: seal.nonce,
-                plain: self.decrypt(&seal.cipher) * r,
+                token: self.decrypt(&seal.token) * r,
             })
             .collect();
 
+        // [NOTE]
         let blinds = blinds.into_iter().map(|blind| blind * r).collect();
 
         return (unsealed, blinds);
-    }
-
-    fn decrypt(&self, cipher: &Ciphertext) -> Plaintext {
-        Plaintext {
-            point: cipher.message - self.secret * cipher.randomness,
-        }
     }
 }
