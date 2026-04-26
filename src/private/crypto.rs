@@ -8,12 +8,6 @@ impl std::fmt::Debug for Ciphertext {
     }
 }
 
-impl std::fmt::Debug for Plaintext {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return write!(f, "Plaintext");
-    }
-}
-
 // ---
 
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
@@ -33,31 +27,7 @@ impl std::ops::Mul<Scalar> for Ciphertext {
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
-pub struct Plaintext {
-    message: RistrettoPoint,
-}
-
-impl<T> From<T> for Plaintext
-where
-    T: Into<u128>,
-{
-    fn from(value: T) -> Self {
-        Self {
-            message: RistrettoPoint::hash_from_bytes::<sha3::Sha3_512>(&value.into().to_ne_bytes()),
-        }
-    }
-}
-
-impl std::ops::Mul<Scalar> for Plaintext {
-    type Output = Self;
-
-    fn mul(self, rhs: Scalar) -> Self::Output {
-        Self {
-            message: self.message * rhs,
-        }
-    }
-}
+pub type Plaintext = RistrettoPoint;
 
 pub struct Sealed {
     pub nonce: u128,
@@ -67,17 +37,6 @@ pub struct Sealed {
 pub struct Unsealed {
     pub nonce: u128,
     pub token: Plaintext,
-}
-
-impl std::ops::Mul<Scalar> for Unsealed {
-    type Output = Self;
-
-    fn mul(self, rhs: Scalar) -> Self::Output {
-        Self {
-            nonce: self.nonce,
-            token: self.token * rhs,
-        }
-    }
 }
 
 pub struct STTP {
@@ -95,19 +54,17 @@ impl STTP {
         }
     }
 
-    pub fn encrypt(&self, plain: &Plaintext) -> Ciphertext {
+    pub fn encrypt(&self, plaintext: &Plaintext) -> Ciphertext {
         let r = Scalar::random(&mut rand::rng());
 
         Ciphertext {
-            message: plain.message + r * self.public,
+            message: plaintext + r * self.public,
             randomness: RistrettoPoint::mul_base(&r),
         }
     }
 
     fn decrypt(&self, cipher: &Ciphertext) -> Plaintext {
-        Plaintext {
-            message: cipher.message - self.secret * cipher.randomness,
-        }
+        return cipher.message - self.secret * cipher.randomness;
     }
 
     pub fn rerandomise(&self, cipher: &Ciphertext) -> Ciphertext {

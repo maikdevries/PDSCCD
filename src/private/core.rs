@@ -1,8 +1,8 @@
-use curve25519_dalek::Scalar;
+use curve25519_dalek::{RistrettoPoint, Scalar};
 use std::collections::{HashMap, HashSet};
 
 use crate::private::{
-    crypto::{Ciphertext, Plaintext, STTP, Sealed, Unsealed},
+    crypto::{Ciphertext, Plaintext, STTP, Sealed},
     tarjan::{Component, Path, Tarjan},
 };
 
@@ -50,7 +50,10 @@ impl<'a> Participant<'a> {
         return nodes
             .into_iter()
             .map(|node| {
-                let message = Plaintext::from(rand::random::<u128>());
+                let message = RistrettoPoint::hash_from_bytes::<sha3::Sha3_512>(
+                    &rand::random::<u128>().to_ne_bytes(),
+                );
+
                 self.tokens.entry(node).or_default().push(message);
 
                 return Query {
@@ -127,17 +130,18 @@ impl<'a> Participant<'a> {
             let (unsealed, blinds) = self.crypto.unseal(seals, blinds);
 
             // [NOTE]
-            let unsealed: Vec<Unsealed> = unsealed
+
+            // [NOTE]
+            let blinds: HashSet<[u8; 32]> = blinds
                 .into_iter()
-                .map(|unsealed| unsealed * beta)
+                .map(|blind| (blind * alpha).compress().to_bytes())
                 .collect();
 
             // [NOTE]
-            let blinds: Vec<Plaintext> = blinds.into_iter().map(|blind| blind * alpha).collect();
-
-            // [NOTE]
             for unseal in unsealed {
-                if blinds.contains(&unseal.token) {
+                let bytes = (unseal.token * beta).compress().to_bytes();
+
+                if blinds.contains(&bytes) {
                     components.push(
                         cache
                             .remove(&unseal.nonce)
