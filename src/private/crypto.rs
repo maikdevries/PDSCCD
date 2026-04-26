@@ -1,4 +1,4 @@
-use curve25519_dalek::{RistrettoPoint, Scalar, constants::RISTRETTO_BASEPOINT_POINT as G};
+use curve25519_dalek::{RistrettoPoint, Scalar};
 
 // ---
 
@@ -90,7 +90,7 @@ impl STTP {
         let secret = Scalar::random(&mut rand::rng());
 
         Self {
-            public: secret * G,
+            public: RistrettoPoint::mul_base(&secret),
             secret: secret,
         }
     }
@@ -100,7 +100,7 @@ impl STTP {
 
         Ciphertext {
             message: plain.message + r * self.public,
-            randomness: r * G,
+            randomness: RistrettoPoint::mul_base(&r),
         }
     }
 
@@ -115,7 +115,7 @@ impl STTP {
 
         Ciphertext {
             message: cipher.message + r * self.public,
-            randomness: cipher.randomness + r * G,
+            randomness: cipher.randomness + RistrettoPoint::mul_base(&r),
         }
     }
 
