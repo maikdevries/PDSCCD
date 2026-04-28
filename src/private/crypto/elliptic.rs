@@ -39,12 +39,12 @@ pub struct Unsealed {
     pub token: Plaintext,
 }
 
-pub struct STTP {
+pub struct Elliptic {
     public: RistrettoPoint,
     secret: Scalar,
 }
 
-impl STTP {
+impl Elliptic {
     pub fn new() -> Self {
         let secret = Scalar::random(&mut rand::rng());
 

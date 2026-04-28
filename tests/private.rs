@@ -1,12 +1,12 @@
 use pcd::private::{
     core::{Graph, Location, Node, Participant},
-    crypto::elliptic::STTP,
+    crypto::Crypto,
     protocol::Protocol,
 };
 
 #[test]
 fn success() {
-    let sttp = STTP::new();
+    let crypto = Crypto::new();
 
     let participants = [
         Participant::new(
@@ -17,7 +17,7 @@ fn success() {
                 Node::new(2, Location::Internal, [3]),
                 Node::new(3, Location::External("B"), []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
         Participant::new(
@@ -28,7 +28,7 @@ fn success() {
                 Node::new(4, Location::Internal, [5]),
                 Node::new(5, Location::External("C"), []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
         Participant::new(
@@ -39,7 +39,7 @@ fn success() {
                 Node::new(0, Location::Internal, [1]),
                 Node::new(1, Location::External("A"), []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
     ];
@@ -54,7 +54,7 @@ fn success() {
 
 #[test]
 fn no_external_nodes() {
-    let sttp = STTP::new();
+    let crypto = Crypto::new();
 
     let participants = [
         Participant::new(
@@ -63,7 +63,7 @@ fn no_external_nodes() {
                 Node::new(1, Location::Internal, [2]),
                 Node::new(2, Location::Internal, []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
         Participant::new(
@@ -72,7 +72,7 @@ fn no_external_nodes() {
                 Node::new(3, Location::Internal, [4]),
                 Node::new(4, Location::Internal, []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
         Participant::new(
@@ -81,7 +81,7 @@ fn no_external_nodes() {
                 Node::new(5, Location::Internal, [0]),
                 Node::new(0, Location::Internal, []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
     ];
@@ -97,7 +97,7 @@ fn no_external_nodes() {
 
 #[test]
 fn no_external_incoming() {
-    let sttp = STTP::new();
+    let crypto = Crypto::new();
 
     let participants = [
         Participant::new(
@@ -107,7 +107,7 @@ fn no_external_incoming() {
                 Node::new(2, Location::Internal, [3]),
                 Node::new(3, Location::External("B"), []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
         Participant::new(
@@ -117,7 +117,7 @@ fn no_external_incoming() {
                 Node::new(4, Location::Internal, [5]),
                 Node::new(5, Location::External("C"), []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
         Participant::new(
@@ -127,7 +127,7 @@ fn no_external_incoming() {
                 Node::new(0, Location::Internal, [1]),
                 Node::new(1, Location::External("A"), []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
     ];
@@ -143,7 +143,7 @@ fn no_external_incoming() {
 
 #[test]
 fn no_external_outgoing() {
-    let sttp = STTP::new();
+    let crypto = Crypto::new();
 
     let participants = [
         Participant::new(
@@ -153,7 +153,7 @@ fn no_external_outgoing() {
                 Node::new(1, Location::Internal, [2]),
                 Node::new(2, Location::Internal, []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
         Participant::new(
@@ -163,7 +163,7 @@ fn no_external_outgoing() {
                 Node::new(3, Location::Internal, [4]),
                 Node::new(4, Location::Internal, []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
         Participant::new(
@@ -173,7 +173,7 @@ fn no_external_outgoing() {
                 Node::new(5, Location::Internal, [0]),
                 Node::new(0, Location::Internal, []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
     ];
@@ -189,7 +189,7 @@ fn no_external_outgoing() {
 
 #[test]
 fn component_size_exceeded() {
-    let sttp = STTP::new();
+    let crypto = Crypto::new();
 
     let participants = [
         Participant::new(
@@ -200,7 +200,7 @@ fn component_size_exceeded() {
                 Node::new(2, Location::Internal, [3]),
                 Node::new(3, Location::External("B"), []),
             ]),
-            &sttp,
+            &crypto,
             5,
         ),
         Participant::new(
@@ -211,7 +211,7 @@ fn component_size_exceeded() {
                 Node::new(4, Location::Internal, [5]),
                 Node::new(5, Location::External("C"), []),
             ]),
-            &sttp,
+            &crypto,
             5,
         ),
         Participant::new(
@@ -222,7 +222,7 @@ fn component_size_exceeded() {
                 Node::new(0, Location::Internal, [1]),
                 Node::new(1, Location::External("A"), []),
             ]),
-            &sttp,
+            &crypto,
             5,
         ),
     ];
@@ -238,7 +238,7 @@ fn component_size_exceeded() {
 
 #[test]
 fn participant_specific_component_size() {
-    let sttp = STTP::new();
+    let crypto = Crypto::new();
 
     let participants = [
         Participant::new(
@@ -249,7 +249,7 @@ fn participant_specific_component_size() {
                 Node::new(2, Location::Internal, [3]),
                 Node::new(3, Location::External("B"), []),
             ]),
-            &sttp,
+            &crypto,
             5,
         ),
         Participant::new(
@@ -260,7 +260,7 @@ fn participant_specific_component_size() {
                 Node::new(4, Location::Internal, [5]),
                 Node::new(5, Location::External("C"), []),
             ]),
-            &sttp,
+            &crypto,
             6,
         ),
         Participant::new(
@@ -271,7 +271,7 @@ fn participant_specific_component_size() {
                 Node::new(0, Location::Internal, [1]),
                 Node::new(1, Location::External("A"), []),
             ]),
-            &sttp,
+            &crypto,
             7,
         ),
     ];

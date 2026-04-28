@@ -1,11 +1,11 @@
 use pcd::private::{
     core::{Graph, Location, Node, Participant},
-    crypto::elliptic::STTP,
+    crypto::Crypto,
     protocol::Protocol,
 };
 
 fn main() {
-    let sttp = STTP::new();
+    let sttp = Crypto::new();
 
     let participants = [
         Participant::new(

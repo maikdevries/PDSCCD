@@ -2,22 +2,22 @@ use curve25519_dalek::{RistrettoPoint, Scalar};
 use std::collections::{HashMap, HashSet};
 
 use crate::private::{
-    crypto::elliptic::{Ciphertext, Plaintext, STTP, Sealed},
+    crypto::{Crypto, elliptic},
     tarjan::{Component, Path, Tarjan},
 };
 
 #[derive(Clone)]
 pub struct Participant<'a> {
     capacity: usize,
-    crypto: &'a STTP,
+    crypto: &'a Crypto,
     pub graph: Graph,
     pub id: PID,
     paths: HashMap<NID, Vec<Path>>,
-    tokens: HashMap<NID, Vec<Plaintext>>,
+    tokens: HashMap<NID, Vec<elliptic::Plaintext>>,
 }
 
 impl<'a> Participant<'a> {
-    pub fn new(id: PID, graph: Graph, crypto: &'a STTP, capacity: usize) -> Self {
+    pub fn new(id: PID, graph: Graph, crypto: &'a Crypto, capacity: usize) -> Self {
         Self {
             capacity: capacity,
             crypto: crypto,
@@ -61,7 +61,7 @@ impl<'a> Participant<'a> {
                     from: self.id,
                     path: Vec::new(),
                     target: node,
-                    token: self.crypto.encrypt(&message),
+                    token: self.crypto.elliptic.encrypt(&message),
                 };
             })
             .collect();
@@ -78,7 +78,7 @@ impl<'a> Participant<'a> {
                         from: self.id,
                         path: query.path.iter().chain(&path.nodes).copied().collect(),
                         target: path.target,
-                        token: self.crypto.rerandomise(&query.token),
+                        token: self.crypto.elliptic.rerandomise(&query.token),
                     });
                 }
             }
@@ -108,7 +108,7 @@ impl<'a> Participant<'a> {
             let seals = queries
                 .into_iter()
                 .map(|query| {
-                    let seal = Sealed {
+                    let seal = elliptic::Sealed {
                         token: query.token * alpha,
                         nonce: rand::random::<u128>(),
                     };
@@ -127,9 +127,7 @@ impl<'a> Participant<'a> {
                 .map(|token| *token * beta)
                 .collect();
 
-            let (unsealed, blinds) = self.crypto.unseal(seals, blinds);
-
-            // [NOTE]
+            let (unsealed, blinds) = self.crypto.elliptic.unseal(seals, blinds);
 
             // [NOTE]
             let blinds: HashSet<[u8; 32]> = blinds
@@ -172,7 +170,7 @@ pub struct Query {
     pub from: PID,
     pub path: Component,
     pub target: NID,
-    pub token: Ciphertext,
+    pub token: elliptic::Ciphertext,
 }
 
 #[derive(Clone)]
