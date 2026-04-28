@@ -50,10 +50,7 @@ impl<'a> Participant<'a> {
         return nodes
             .into_iter()
             .map(|node| {
-                let message = RistrettoPoint::hash_from_bytes::<sha3::Sha3_512>(
-                    &rand::random::<u128>().to_ne_bytes(),
-                );
-
+                let message = elliptic::Elliptic::encode(rand::random::<u128>());
                 self.tokens.entry(node).or_default().push(message);
 
                 return Query {

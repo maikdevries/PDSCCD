@@ -1,7 +1,6 @@
 use crate::private::crypto::elliptic::Elliptic;
 
 pub mod elliptic;
-
 mod threshold;
 
 pub struct Crypto {

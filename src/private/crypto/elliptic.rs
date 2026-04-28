@@ -54,6 +54,10 @@ impl Elliptic {
         }
     }
 
+    pub fn encode(message: u128) -> Plaintext {
+        return RistrettoPoint::hash_from_bytes::<sha3::Sha3_512>(&message.to_ne_bytes());
+    }
+
     pub fn encrypt(&self, plaintext: &Plaintext) -> Ciphertext {
         let r = Scalar::random(&mut rand::rng());
 
