@@ -1,6 +1,6 @@
 use pcd::private::{
     core::{Graph, Location, Node, Participant},
-    crypto::STTP,
+    crypto::elliptic::STTP,
     protocol::Protocol,
 };
 

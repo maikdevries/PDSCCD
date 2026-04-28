@@ -2,7 +2,7 @@ use curve25519_dalek::{RistrettoPoint, Scalar};
 use std::collections::{HashMap, HashSet};
 
 use crate::private::{
-    crypto::{Ciphertext, Plaintext, STTP, Sealed},
+    crypto::elliptic::{Ciphertext, Plaintext, STTP, Sealed},
     tarjan::{Component, Path, Tarjan},
 };
 
