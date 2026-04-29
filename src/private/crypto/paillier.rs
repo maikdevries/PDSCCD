@@ -92,3 +92,34 @@ impl Paillier {
         return (L * self.private.mu) % self.public.modulus;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encrypt_probabilistic() {
+        let crypto = Paillier::new();
+
+        let value = rand::random::<u128>();
+        let message = Plaintext::from(value);
+
+        let a = crypto.encrypt(&message);
+        let b = crypto.encrypt(&message);
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn decrypt() {
+        let crypto = Paillier::new();
+
+        let value = rand::random::<u128>();
+        let message = Plaintext::from(value);
+
+        let cipher = crypto.encrypt(&message);
+        let plain = crypto.decrypt(&cipher);
+
+        assert_eq!(plain, message);
+    }
+}
