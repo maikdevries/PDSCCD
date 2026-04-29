@@ -1,8 +1,8 @@
-use curve25519_dalek::{RistrettoPoint, Scalar};
+use curve25519_dalek::Scalar;
 use std::collections::{HashMap, HashSet};
 
 use crate::private::{
-    crypto::{Crypto, elliptic},
+    crypto::{Crypto, elliptic, paillier},
     tarjan::{Component, Path, Tarjan},
 };
 
@@ -70,10 +70,16 @@ impl<'a> Participant<'a> {
             for path in self.paths.get(&query.target).into_iter().flatten() {
                 // [NOTE]
                 if let Some(capacity) = query.capacity.checked_sub(path.nodes.len()) {
+                    let nodes: Vec<paillier::Ciphertext> = path
+                        .nodes
+                        .iter()
+                        .map(|n| self.crypto.paillier.encrypt(&paillier::Plaintext::from(*n)))
+                        .collect();
+
                     map.entry(path.participant).or_default().push(Query {
                         capacity: capacity,
                         from: self.id,
-                        path: query.path.iter().chain(&path.nodes).copied().collect(),
+                        path: query.path.iter().chain(&nodes).copied().collect(),
                         target: path.target,
                         token: self.crypto.elliptic.rerandomise(&query.token),
                     });
@@ -137,12 +143,22 @@ impl<'a> Participant<'a> {
                 let bytes = (unseal.token * beta).compress().to_bytes();
 
                 if blinds.contains(&bytes) {
-                    components.push(
-                        cache
-                            .remove(&unseal.nonce)
-                            .expect("Unsealed nonce must be known")
-                            .path,
-                    );
+                    let component = cache
+                        .remove(&unseal.nonce)
+                        .expect("Unsealed nonce must be known")
+                        .path
+                        .into_iter()
+                        .map(|node| {
+                            NID::from_le_bytes(
+                                self.crypto.paillier.decrypt(&node).to_le_bytes()
+                                    [..size_of::<NID>()]
+                                    .try_into()
+                                    .unwrap(),
+                            )
+                        })
+                        .collect();
+
+                    components.push(component);
                 } else {
                     incomplete.push(
                         cache
@@ -165,7 +181,7 @@ pub type PID = &'static str;
 pub struct Query {
     pub capacity: usize,
     pub from: PID,
-    pub path: Component,
+    pub path: Vec<paillier::Ciphertext>,
     pub target: NID,
     pub token: elliptic::Ciphertext,
 }
