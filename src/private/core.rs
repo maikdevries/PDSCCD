@@ -86,7 +86,7 @@ impl<'a> Participant<'a> {
 
     pub fn decrypt(&self, queries: Vec<Query>) -> (Vec<Component>, Vec<Query>) {
         // [NOTE]
-        let groups: HashMap<usize, Vec<Query>> =
+        let groups: HashMap<NID, Vec<Query>> =
             queries.into_iter().fold(HashMap::new(), |mut map, query| {
                 map.entry(query.target).or_default().push(query);
                 return map;
