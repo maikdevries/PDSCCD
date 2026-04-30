@@ -54,8 +54,11 @@ impl Elliptic {
         }
     }
 
-    pub fn encode(message: u128) -> Plaintext {
-        return RistrettoPoint::mul_base(&Scalar::from(message));
+    pub fn encode<T>(message: T) -> Plaintext
+    where
+        T: Into<Scalar>,
+    {
+        return RistrettoPoint::mul_base(&message.into());
     }
 
     pub fn encrypt(&self, plaintext: &Plaintext) -> Ciphertext {
