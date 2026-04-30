@@ -54,7 +54,7 @@ impl Elliptic {
         let secret = Scalar::random(&mut rand::rng());
 
         Self {
-            lookup: Elliptic::generate_lookup(),
+            lookup: Self::generate_lookup(),
             public: RistrettoPoint::mul_base(&secret),
             secret: secret,
         }
@@ -65,7 +65,7 @@ impl Elliptic {
         let mut baby = RistrettoPoint::default();
 
         // [NOTE]
-        for i in 0..Elliptic::B {
+        for i in 0..Self::B {
             lookup.insert(baby.compress().to_bytes(), i);
             baby += G;
         }
@@ -128,12 +128,12 @@ impl Elliptic {
         let mut giant = *point;
 
         // [NOTE]
-        for i in 0..=Elliptic::B {
+        for i in 0..=Self::B {
             if let Some(j) = self.lookup.get(&giant.compress().to_bytes()) {
-                return Some(i * Elliptic::B + j);
+                return Some(i * Self::B + j);
             }
 
-            giant -= RistrettoPoint::mul_base(&Scalar::from(Elliptic::B));
+            giant -= RistrettoPoint::mul_base(&Scalar::from(Self::B));
         }
 
         return None;
