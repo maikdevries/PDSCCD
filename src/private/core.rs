@@ -2,7 +2,10 @@ use curve25519_dalek::Scalar;
 use std::collections::{HashMap, HashSet};
 
 use crate::private::{
-    crypto::{Crypto, elliptic, paillier},
+    crypto::{
+        Crypto,
+        elliptic::{Ciphertext, Elliptic, Plaintext, Sealed},
+    },
     tarjan::{Component, Path, Tarjan},
 };
 
@@ -13,7 +16,7 @@ pub struct Participant<'a> {
     pub graph: Graph,
     pub id: PID,
     paths: HashMap<NID, Vec<Path>>,
-    tokens: HashMap<NID, Vec<elliptic::Plaintext>>,
+    tokens: HashMap<NID, Vec<Plaintext>>,
 }
 
 impl<'a> Participant<'a> {
@@ -50,7 +53,7 @@ impl<'a> Participant<'a> {
         return nodes
             .into_iter()
             .map(|node| {
-                let message = elliptic::Elliptic::encode(rand::random::<u128>());
+                let message = Elliptic::encode(rand::random::<u128>());
                 self.tokens.entry(node).or_default().push(message);
 
                 return Query {
@@ -71,10 +74,10 @@ impl<'a> Participant<'a> {
                 // [NOTE]
                 if let Some(capacity) = query.capacity.checked_sub(path.nodes.len()) {
                     // [PERF] Encrypt path once and store for later re-use
-                    let nodes: Vec<paillier::Ciphertext> = path
+                    let nodes: Vec<Ciphertext> = path
                         .nodes
                         .iter()
-                        .map(|n| self.crypto.paillier.encrypt(&paillier::Plaintext::from(*n)))
+                        .map(|n| self.crypto.elliptic.encrypt(&Elliptic::encode(*n)))
                         .collect();
 
                     map.entry(path.participant).or_default().push(Query {
@@ -84,7 +87,7 @@ impl<'a> Participant<'a> {
                             .path
                             .iter()
                             .chain(&nodes)
-                            .map(|c| self.crypto.paillier.rerandomise(c))
+                            .map(|c| self.crypto.elliptic.rerandomise(c))
                             .collect(),
                         target: path.target,
                         token: self.crypto.elliptic.rerandomise(&query.token),
@@ -117,9 +120,9 @@ impl<'a> Participant<'a> {
             let seals = queries
                 .into_iter()
                 .map(|query| {
-                    let seal = elliptic::Sealed {
-                        token: query.token * alpha,
+                    let seal = Sealed {
                         nonce: rand::random::<u128>(),
+                        token: query.token * alpha,
                     };
 
                     cache.insert(seal.nonce, query);
@@ -156,12 +159,10 @@ impl<'a> Participant<'a> {
                         .path
                         .into_iter()
                         .map(|node| {
-                            NID::from_le_bytes(
-                                self.crypto.paillier.decrypt(&node).to_le_bytes()
-                                    [..size_of::<NID>()]
-                                    .try_into()
-                                    .unwrap(),
-                            )
+                            self.crypto
+                                .elliptic
+                                .recover(&self.crypto.elliptic.decrypt(&node))
+                                .unwrap()
                         })
                         .collect();
 
@@ -188,9 +189,9 @@ pub type PID = &'static str;
 pub struct Query {
     pub capacity: usize,
     pub from: PID,
-    pub path: Vec<paillier::Ciphertext>,
+    pub path: Vec<Ciphertext>,
     pub target: NID,
-    pub token: elliptic::Ciphertext,
+    pub token: Ciphertext,
 }
 
 #[derive(Clone)]

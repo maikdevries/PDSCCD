@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::private::{
     core::{Location, PID, Participant, Query},
-    crypto::elliptic,
+    crypto::elliptic::Ciphertext,
     tarjan::Component,
 };
 
@@ -66,7 +66,7 @@ impl<'a> Protocol<'a> {
                 from: "",
                 path: Vec::new(),
                 target: node,
-                token: elliptic::Ciphertext::default(),
+                token: Ciphertext::default(),
             })
             .collect();
     }

@@ -89,7 +89,7 @@ impl Elliptic {
         }
     }
 
-    fn decrypt(&self, cipher: &Ciphertext) -> Plaintext {
+    pub fn decrypt(&self, cipher: &Ciphertext) -> Plaintext {
         return cipher.message - self.secret * cipher.randomness;
     }
 
