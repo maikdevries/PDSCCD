@@ -6,8 +6,8 @@ pub type Component = Vec<NID>;
 
 // [TODO]
 #[derive(Clone, Debug)]
-pub struct Path {
-    pub nodes: Component,
+pub struct Path<C = Component> {
+    pub nodes: C,
     pub participant: PID,
     pub target: NID,
 }
