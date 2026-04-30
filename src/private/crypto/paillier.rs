@@ -127,4 +127,32 @@ mod tests {
 
         assert_eq!(plain, message);
     }
+
+    #[test]
+    fn rerandomise_indistinguishable() {
+        let crypto = Paillier::new();
+
+        let value = rand::random::<u128>();
+        let message = Plaintext::from(value);
+
+        let a = crypto.encrypt(&message);
+        let b = crypto.rerandomise(&a);
+
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn rerandomise_preserving() {
+        let crypto = Paillier::new();
+
+        let value = rand::random::<u128>();
+        let message = Plaintext::from(value);
+
+        let a = crypto.encrypt(&message);
+        let b = crypto.rerandomise(&a);
+
+        let plain = crypto.decrypt(&b);
+
+        assert_eq!(plain, message);
+    }
 }
