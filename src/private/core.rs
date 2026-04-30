@@ -181,7 +181,7 @@ impl<'a> Participant<'a> {
     }
 }
 
-pub type NID = usize;
+pub type NID = u32;
 pub type PID = &'static str;
 
 type CipherPath = Path<Vec<Ciphertext>>;
