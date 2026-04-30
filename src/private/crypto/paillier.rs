@@ -91,6 +91,28 @@ impl Paillier {
         // [NOTE]
         return (L * self.private.mu) % self.public.modulus;
     }
+
+    pub fn rerandomise(&self, cipher: &Ciphertext) -> Ciphertext {
+        // [NOTE]
+        let r = U2048::random_mod_vartime(
+            &mut rand::rng(),
+            &self.public.modulus.to_nz_vartime().unwrap(),
+        );
+
+        // [TODO] Greatest common divisor of r and modulus must be 1
+        assert_ne!(r, U2048::ZERO, "Randomness must not be zero");
+
+        // [NOTE]
+        let randomness = FixedMontyForm::new(
+            &r.resize(),
+            &FixedMontyParams::new_vartime(self.public.squared.to_odd().unwrap()),
+        )
+        .pow_vartime(&self.public.modulus)
+        .retrieve();
+
+        // [NOTE]
+        return cipher.mul_mod_vartime(&randomness, &self.public.squared.to_nz_vartime().unwrap());
+    }
 }
 
 #[cfg(test)]
