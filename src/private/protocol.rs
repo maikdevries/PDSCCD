@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::private::{
     core::{Location, PID, Participant, Query},
-    crypto::elliptic::Ciphertext,
+    crypto::Ciphertext,
     tarjan::Component,
 };
 

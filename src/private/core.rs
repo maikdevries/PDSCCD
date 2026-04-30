@@ -2,10 +2,7 @@ use curve25519_dalek::Scalar;
 use std::collections::{HashMap, HashSet};
 
 use crate::private::{
-    crypto::{
-        Crypto,
-        elliptic::{Ciphertext, Elliptic, Plaintext, Sealed},
-    },
+    crypto::{Ciphertext, Crypto, Plaintext, Sealed},
     tarjan::{Component, Path, Tarjan},
 };
 
@@ -53,7 +50,7 @@ impl<'a> Participant<'a> {
         return nodes
             .into_iter()
             .map(|node| {
-                let message = Elliptic::encode(rand::random::<u128>());
+                let message = Crypto::encode(rand::random::<u128>());
                 self.tokens.entry(node).or_default().push(message);
 
                 return Query {
@@ -61,7 +58,7 @@ impl<'a> Participant<'a> {
                     from: self.id,
                     path: Vec::new(),
                     target: node,
-                    token: self.crypto.elliptic.encrypt(&message),
+                    token: self.crypto.encrypt(&message),
                 };
             })
             .collect();
@@ -77,7 +74,7 @@ impl<'a> Participant<'a> {
                     let nodes: Vec<Ciphertext> = path
                         .nodes
                         .iter()
-                        .map(|n| self.crypto.elliptic.encrypt(&Elliptic::encode(*n)))
+                        .map(|n| self.crypto.encrypt(&Crypto::encode(*n)))
                         .collect();
 
                     map.entry(path.participant).or_default().push(Query {
@@ -87,10 +84,10 @@ impl<'a> Participant<'a> {
                             .path
                             .iter()
                             .chain(&nodes)
-                            .map(|c| self.crypto.elliptic.rerandomise(c))
+                            .map(|c| self.crypto.rerandomise(c))
                             .collect(),
                         target: path.target,
-                        token: self.crypto.elliptic.rerandomise(&query.token),
+                        token: self.crypto.rerandomise(&query.token),
                     });
                 }
             }
@@ -139,7 +136,7 @@ impl<'a> Participant<'a> {
                 .map(|token| *token * beta)
                 .collect();
 
-            let (unsealed, blinds) = self.crypto.elliptic.unseal(seals, blinds);
+            let (unsealed, blinds) = self.crypto.unseal(seals, blinds);
 
             // [NOTE]
             let blinds: HashSet<[u8; 32]> = blinds
@@ -158,12 +155,7 @@ impl<'a> Participant<'a> {
                         .expect("Unsealed nonce must be known")
                         .path
                         .into_iter()
-                        .map(|node| {
-                            self.crypto
-                                .elliptic
-                                .recover(&self.crypto.elliptic.decrypt(&node))
-                                .unwrap()
-                        })
+                        .map(|node| self.crypto.recover(&self.crypto.decrypt(&node)).unwrap())
                         .collect();
 
                     components.push(component);
