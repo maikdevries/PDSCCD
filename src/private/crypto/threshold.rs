@@ -33,7 +33,7 @@ where
 {
     fn from(value: T) -> Self {
         Self {
-            point: RistrettoPoint::hash_from_bytes::<sha3::Sha3_512>(&value.into().to_ne_bytes()),
+            point: Scalar::from(value.into()) * G,
         }
     }
 }
