@@ -1,4 +1,5 @@
-use curve25519_dalek::{RistrettoPoint, Scalar};
+use curve25519_dalek::{RistrettoPoint, Scalar, constants::RISTRETTO_BASEPOINT_POINT as G};
+use std::collections::HashMap;
 
 // ---
 
@@ -40,18 +41,36 @@ pub struct Unsealed {
 }
 
 pub struct Elliptic {
+    lookup: HashMap<[u8; 32], u32>,
     public: RistrettoPoint,
     secret: Scalar,
 }
 
 impl Elliptic {
+    // [NOTE]
+    const B: u32 = u32::MAX.isqrt() + 1;
+
     pub fn new() -> Self {
         let secret = Scalar::random(&mut rand::rng());
 
         Self {
+            lookup: Elliptic::generate_lookup(),
             public: RistrettoPoint::mul_base(&secret),
             secret: secret,
         }
+    }
+
+    fn generate_lookup() -> HashMap<[u8; 32], u32> {
+        let mut lookup = HashMap::new();
+        let mut baby = RistrettoPoint::default();
+
+        // [NOTE]
+        for i in 0..Elliptic::B {
+            lookup.insert(baby.compress().to_bytes(), i);
+            baby += G;
+        }
+
+        return lookup;
     }
 
     pub fn encode<T>(message: T) -> Plaintext
@@ -103,5 +122,20 @@ impl Elliptic {
         let blinds = blinds.into_iter().map(|blind| blind * r).collect();
 
         return (unsealed, blinds);
+    }
+
+    pub fn recover(&self, point: &Plaintext) -> Option<u32> {
+        let mut giant = *point;
+
+        // [NOTE]
+        for i in 0..=Elliptic::B {
+            if let Some(j) = self.lookup.get(&giant.compress().to_bytes()) {
+                return Some(i * Elliptic::B + j);
+            }
+
+            giant -= RistrettoPoint::mul_base(&Scalar::from(Elliptic::B));
+        }
+
+        return None;
     }
 }
