@@ -70,6 +70,7 @@ impl<'a> Participant<'a> {
             for path in self.paths.get(&query.target).into_iter().flatten() {
                 // [NOTE]
                 if let Some(capacity) = query.capacity.checked_sub(path.nodes.len()) {
+                    // [PERF] Encrypt path once and store for later re-use
                     let nodes: Vec<paillier::Ciphertext> = path
                         .nodes
                         .iter()
@@ -79,7 +80,12 @@ impl<'a> Participant<'a> {
                     map.entry(path.participant).or_default().push(Query {
                         capacity: capacity,
                         from: self.id,
-                        path: query.path.iter().chain(&nodes).copied().collect(),
+                        path: query
+                            .path
+                            .iter()
+                            .chain(&nodes)
+                            .map(|c| self.crypto.paillier.rerandomise(c))
+                            .collect(),
                         target: path.target,
                         token: self.crypto.elliptic.rerandomise(&query.token),
                     });
@@ -143,6 +149,7 @@ impl<'a> Participant<'a> {
                 let bytes = (unseal.token * beta).compress().to_bytes();
 
                 if blinds.contains(&bytes) {
+                    // [NOTE]
                     let component = cache
                         .remove(&unseal.nonce)
                         .expect("Unsealed nonce must be known")
