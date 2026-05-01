@@ -1,5 +1,8 @@
 use curve25519_dalek::Scalar;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use crate::private::{
     crypto::{Ciphertext, Crypto, Sealed, Unsealed},
@@ -7,17 +10,17 @@ use crate::private::{
 };
 
 #[derive(Clone)]
-pub struct Participant<'a> {
+pub struct Participant {
     capacity: usize,
-    crypto: &'a Crypto,
+    crypto: Arc<Crypto>,
     pub graph: Graph,
     pub id: PID,
     paths: HashMap<NID, Vec<Path>>,
     tokens: HashMap<NID, Vec<Scalar>>,
 }
 
-impl<'a> Participant<'a> {
-    pub fn new(id: PID, graph: Graph, crypto: &'a Crypto, capacity: usize) -> Self {
+impl Participant {
+    pub fn new(id: PID, graph: Graph, crypto: Arc<Crypto>, capacity: usize) -> Self {
         Self {
             capacity: capacity,
             crypto: crypto,

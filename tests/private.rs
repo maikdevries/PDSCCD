@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pcd::private::{
     core::{Graph, Location, Node, Participant},
     crypto::Crypto,
@@ -6,7 +8,7 @@ use pcd::private::{
 
 #[test]
 fn success() {
-    let crypto = Crypto::new();
+    let crypto = Arc::new(Crypto::new());
 
     let participants = [
         Participant::new(
@@ -17,7 +19,7 @@ fn success() {
                 Node::new(2, Location::Internal, [3]),
                 Node::new(3, Location::External("B"), []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
         Participant::new(
@@ -28,7 +30,7 @@ fn success() {
                 Node::new(4, Location::Internal, [5]),
                 Node::new(5, Location::External("C"), []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
         Participant::new(
@@ -39,7 +41,7 @@ fn success() {
                 Node::new(0, Location::Internal, [1]),
                 Node::new(1, Location::External("A"), []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
     ];
@@ -54,7 +56,7 @@ fn success() {
 
 #[test]
 fn no_external_nodes() {
-    let crypto = Crypto::new();
+    let crypto = Arc::new(Crypto::new());
 
     let participants = [
         Participant::new(
@@ -63,7 +65,7 @@ fn no_external_nodes() {
                 Node::new(1, Location::Internal, [2]),
                 Node::new(2, Location::Internal, []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
         Participant::new(
@@ -72,7 +74,7 @@ fn no_external_nodes() {
                 Node::new(3, Location::Internal, [4]),
                 Node::new(4, Location::Internal, []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
         Participant::new(
@@ -81,7 +83,7 @@ fn no_external_nodes() {
                 Node::new(5, Location::Internal, [0]),
                 Node::new(0, Location::Internal, []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
     ];
@@ -97,7 +99,7 @@ fn no_external_nodes() {
 
 #[test]
 fn no_external_incoming() {
-    let crypto = Crypto::new();
+    let crypto = Arc::new(Crypto::new());
 
     let participants = [
         Participant::new(
@@ -107,7 +109,7 @@ fn no_external_incoming() {
                 Node::new(2, Location::Internal, [3]),
                 Node::new(3, Location::External("B"), []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
         Participant::new(
@@ -117,7 +119,7 @@ fn no_external_incoming() {
                 Node::new(4, Location::Internal, [5]),
                 Node::new(5, Location::External("C"), []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
         Participant::new(
@@ -127,7 +129,7 @@ fn no_external_incoming() {
                 Node::new(0, Location::Internal, [1]),
                 Node::new(1, Location::External("A"), []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
     ];
@@ -143,7 +145,7 @@ fn no_external_incoming() {
 
 #[test]
 fn no_external_outgoing() {
-    let crypto = Crypto::new();
+    let crypto = Arc::new(Crypto::new());
 
     let participants = [
         Participant::new(
@@ -153,7 +155,7 @@ fn no_external_outgoing() {
                 Node::new(1, Location::Internal, [2]),
                 Node::new(2, Location::Internal, []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
         Participant::new(
@@ -163,7 +165,7 @@ fn no_external_outgoing() {
                 Node::new(3, Location::Internal, [4]),
                 Node::new(4, Location::Internal, []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
         Participant::new(
@@ -173,7 +175,7 @@ fn no_external_outgoing() {
                 Node::new(5, Location::Internal, [0]),
                 Node::new(0, Location::Internal, []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
     ];
@@ -189,7 +191,7 @@ fn no_external_outgoing() {
 
 #[test]
 fn component_size_exceeded() {
-    let crypto = Crypto::new();
+    let crypto = Arc::new(Crypto::new());
 
     let participants = [
         Participant::new(
@@ -200,7 +202,7 @@ fn component_size_exceeded() {
                 Node::new(2, Location::Internal, [3]),
                 Node::new(3, Location::External("B"), []),
             ]),
-            &crypto,
+            crypto.clone(),
             5,
         ),
         Participant::new(
@@ -211,7 +213,7 @@ fn component_size_exceeded() {
                 Node::new(4, Location::Internal, [5]),
                 Node::new(5, Location::External("C"), []),
             ]),
-            &crypto,
+            crypto.clone(),
             5,
         ),
         Participant::new(
@@ -222,7 +224,7 @@ fn component_size_exceeded() {
                 Node::new(0, Location::Internal, [1]),
                 Node::new(1, Location::External("A"), []),
             ]),
-            &crypto,
+            crypto.clone(),
             5,
         ),
     ];
@@ -238,7 +240,7 @@ fn component_size_exceeded() {
 
 #[test]
 fn participant_specific_component_size() {
-    let crypto = Crypto::new();
+    let crypto = Arc::new(Crypto::new());
 
     let participants = [
         Participant::new(
@@ -249,7 +251,7 @@ fn participant_specific_component_size() {
                 Node::new(2, Location::Internal, [3]),
                 Node::new(3, Location::External("B"), []),
             ]),
-            &crypto,
+            crypto.clone(),
             5,
         ),
         Participant::new(
@@ -260,7 +262,7 @@ fn participant_specific_component_size() {
                 Node::new(4, Location::Internal, [5]),
                 Node::new(5, Location::External("C"), []),
             ]),
-            &crypto,
+            crypto.clone(),
             6,
         ),
         Participant::new(
@@ -271,7 +273,7 @@ fn participant_specific_component_size() {
                 Node::new(0, Location::Internal, [1]),
                 Node::new(1, Location::External("A"), []),
             ]),
-            &crypto,
+            crypto.clone(),
             7,
         ),
     ];

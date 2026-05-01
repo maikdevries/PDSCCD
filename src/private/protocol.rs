@@ -22,13 +22,13 @@ macro_rules! debug_println {
 
 // ---
 
-pub struct Protocol<'a> {
-    participants: HashMap<PID, Participant<'a>>,
+pub struct Protocol {
+    participants: HashMap<PID, Participant>,
     queue: VecDeque<(PID, Vec<Query>)>,
 }
 
-impl<'a> Protocol<'a> {
-    pub fn new<const N: usize>(participants: [Participant<'a>; N]) -> Self {
+impl Protocol {
+    pub fn new<const N: usize>(participants: [Participant; N]) -> Self {
         Self {
             participants: participants.into_iter().map(|p| (p.id, p)).collect(),
             queue: VecDeque::new(),
