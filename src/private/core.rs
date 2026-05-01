@@ -69,16 +69,19 @@ impl<'a> Participant<'a> {
             for path in self.paths.get(&query.target).into_iter().flatten() {
                 // [NOTE]
                 if let Some(capacity) = query.capacity.checked_sub(path.nodes.len()) {
+                    // [NOTE]
+                    let token = self.crypto.rerandomise(&query.token);
+
                     map.entry(path.participant).or_default().push(Query {
                         capacity: capacity,
                         path: query
                             .path
                             .iter()
                             .map(|c| self.crypto.rerandomise(c))
-                            .chain(path.nodes.iter().map(|n| query.token * Scalar::from(*n)))
+                            .chain(path.nodes.iter().map(|n| token * Scalar::from(*n)))
                             .collect(),
                         target: path.target,
-                        token: self.crypto.rerandomise(&query.token),
+                        token: token,
                     });
                 }
             }
