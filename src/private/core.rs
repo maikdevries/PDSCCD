@@ -157,6 +157,7 @@ impl<'a> Participant<'a> {
                 let bytes = (unseal.token * beta).compress().to_bytes();
 
                 if let Some(nonce) = blinds.get(&bytes) {
+                    let gamma = Scalar::random(&mut rand::rng());
                     let inverse = bache.get(nonce).expect("Blind nonce must be known");
 
                     // [NOTE]
@@ -167,7 +168,9 @@ impl<'a> Participant<'a> {
                         .into_iter()
                         .map(|c| {
                             self.crypto
-                                .recover(&(self.crypto.decrypt(&c) * inverse))
+                                .recover(
+                                    &(self.crypto.decrypt(&(c * gamma)) * gamma.invert() * inverse),
+                                )
                                 .unwrap()
                         })
                         .collect();
