@@ -12,7 +12,7 @@ pub struct Participant<'a> {
     crypto: &'a Crypto,
     pub graph: Graph,
     pub id: PID,
-    paths: HashMap<NID, Vec<CipherPath>>,
+    paths: HashMap<NID, Vec<Path>>,
     tokens: HashMap<NID, Vec<Plaintext>>,
 }
 
@@ -39,22 +39,7 @@ impl<'a> Participant<'a> {
         let (components, paths) = Tarjan::new(&self.graph).detect(targets);
 
         // [NOTE]
-        for (k, v) in paths {
-            self.paths
-                .entry(k)
-                .or_default()
-                .extend(v.into_iter().map(|path| {
-                    CipherPath {
-                        nodes: path
-                            .nodes
-                            .into_iter()
-                            .map(|n| self.crypto.encrypt(&Crypto::encode(n)))
-                            .collect(),
-                        participant: path.participant,
-                        target: path.target,
-                    }
-                }));
-        }
+        self.paths.extend(paths);
 
         // [NOTE] Filter out trivial components (i.e. consist of a single node)
         return components.into_iter().filter(|c| c.len() > 1).collect();
@@ -85,13 +70,20 @@ impl<'a> Participant<'a> {
             for path in self.paths.get(&query.target).into_iter().flatten() {
                 // [NOTE]
                 if let Some(capacity) = query.capacity.checked_sub(path.nodes.len()) {
+                    // [PERF] Encrypt path once and store for later re-use
+                    let nodes: Vec<Ciphertext> = path
+                        .nodes
+                        .iter()
+                        .map(|n| self.crypto.encrypt(&Crypto::encode(*n)))
+                        .collect();
+
                     map.entry(path.participant).or_default().push(Query {
                         capacity: capacity,
                         from: self.id,
                         path: query
                             .path
                             .iter()
-                            .chain(&path.nodes)
+                            .chain(&nodes)
                             .map(|c| self.crypto.rerandomise(c))
                             .collect(),
                         target: path.target,
@@ -183,8 +175,6 @@ impl<'a> Participant<'a> {
 
 pub type NID = u32;
 pub type PID = &'static str;
-
-type CipherPath = Path<Vec<Ciphertext>>;
 
 // [TODO]
 #[derive(Debug)]
