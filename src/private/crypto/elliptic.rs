@@ -105,8 +105,8 @@ impl Elliptic {
     pub fn unseal(
         &self,
         seals: Vec<Sealed>,
-        blinds: Vec<Plaintext>,
-    ) -> (Vec<Unsealed>, Vec<Plaintext>) {
+        blinds: Vec<Unsealed>,
+    ) -> (Vec<Unsealed>, Vec<Unsealed>) {
         let r = Scalar::random(&mut rand::rng());
 
         // [NOTE]
@@ -119,7 +119,13 @@ impl Elliptic {
             .collect();
 
         // [NOTE]
-        let blinds = blinds.into_iter().map(|blind| blind * r).collect();
+        let blinds = blinds
+            .into_iter()
+            .map(|blind| Unsealed {
+                nonce: blind.nonce,
+                token: blind.token * r,
+            })
+            .collect();
 
         return (unsealed, blinds);
     }

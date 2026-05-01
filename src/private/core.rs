@@ -2,7 +2,7 @@ use curve25519_dalek::Scalar;
 use std::collections::{HashMap, HashSet};
 
 use crate::private::{
-    crypto::{Ciphertext, Crypto, Plaintext, Sealed},
+    crypto::{Ciphertext, Crypto, Sealed, Unsealed},
     tarjan::{Component, Path, Tarjan},
 };
 
@@ -13,7 +13,7 @@ pub struct Participant<'a> {
     pub graph: Graph,
     pub id: PID,
     paths: HashMap<NID, Vec<Path>>,
-    tokens: HashMap<NID, Vec<Plaintext>>,
+    tokens: HashMap<NID, Vec<Scalar>>,
 }
 
 impl<'a> Participant<'a> {
@@ -50,15 +50,15 @@ impl<'a> Participant<'a> {
         return nodes
             .into_iter()
             .map(|node| {
-                let message = Crypto::encode(rand::random::<u128>());
-                self.tokens.entry(node).or_default().push(message);
+                let token = Scalar::random(&mut rand::rng());
+                self.tokens.entry(node).or_default().push(token);
 
                 return Query {
                     capacity: self.capacity,
                     from: self.id,
                     path: Vec::new(),
                     target: node,
-                    token: self.crypto.encrypt(&message),
+                    token: self.crypto.encrypt(&Crypto::encode(token)),
                 };
             })
             .collect();
@@ -70,20 +70,19 @@ impl<'a> Participant<'a> {
             for path in self.paths.get(&query.target).into_iter().flatten() {
                 // [NOTE]
                 if let Some(capacity) = query.capacity.checked_sub(path.nodes.len()) {
-                    // [PERF] Encrypt path once and store for later re-use
-                    let nodes: Vec<Ciphertext> = path
-                        .nodes
-                        .iter()
-                        .map(|n| self.crypto.encrypt(&Crypto::encode(*n)))
-                        .collect();
-
                     map.entry(path.participant).or_default().push(Query {
                         capacity: capacity,
                         from: self.id,
                         path: query
                             .path
                             .iter()
-                            .chain(&nodes)
+                            .chain(
+                                &path
+                                    .nodes
+                                    .iter()
+                                    .map(|n| query.token * Scalar::from(*n))
+                                    .collect::<Vec<Ciphertext>>(),
+                            )
                             .map(|c| self.crypto.rerandomise(c))
                             .collect(),
                         target: path.target,
@@ -108,7 +107,8 @@ impl<'a> Participant<'a> {
         let mut incomplete = Vec::new();
 
         for (node, queries) in groups {
-            let mut cache = HashMap::new();
+            let mut bache = HashMap::new();
+            let mut qache = HashMap::new();
 
             let alpha = Scalar::random(&mut rand::rng());
             let beta = Scalar::random(&mut rand::rng());
@@ -122,7 +122,7 @@ impl<'a> Participant<'a> {
                         token: query.token * alpha,
                     };
 
-                    cache.insert(seal.nonce, query);
+                    qache.insert(seal.nonce, query);
                     return seal;
                 })
                 .collect();
@@ -133,35 +133,49 @@ impl<'a> Participant<'a> {
                 .get(&node)
                 .expect("Target node tokens must be known to decrypt")
                 .iter()
-                .map(|token| *token * beta)
+                .map(|token| {
+                    let nonce = rand::random::<u128>();
+                    bache.insert(nonce, token.invert());
+
+                    return Unsealed {
+                        nonce: nonce,
+                        token: Crypto::encode(*token) * beta,
+                    };
+                })
                 .collect();
 
             let (unsealed, blinds) = self.crypto.unseal(seals, blinds);
 
             // [NOTE]
-            let blinds: HashSet<[u8; 32]> = blinds
+            let blinds: HashMap<[u8; 32], u128> = blinds
                 .into_iter()
-                .map(|blind| (blind * alpha).compress().to_bytes())
+                .map(|blind| ((blind.token * alpha).compress().to_bytes(), blind.nonce))
                 .collect();
 
             // [NOTE]
             for unseal in unsealed {
                 let bytes = (unseal.token * beta).compress().to_bytes();
 
-                if blinds.contains(&bytes) {
+                if let Some(nonce) = blinds.get(&bytes) {
+                    let inverse = bache.get(nonce).expect("Blind nonce must be known");
+
                     // [NOTE]
-                    let component = cache
+                    let component = qache
                         .remove(&unseal.nonce)
                         .expect("Unsealed nonce must be known")
                         .path
                         .into_iter()
-                        .map(|node| self.crypto.recover(&self.crypto.decrypt(&node)).unwrap())
+                        .map(|c| {
+                            self.crypto
+                                .recover(&(self.crypto.decrypt(&c) * inverse))
+                                .unwrap()
+                        })
                         .collect();
 
                     components.push(component);
                 } else {
                     incomplete.push(
-                        cache
+                        qache
                             .remove(&unseal.nonce)
                             .expect("Unsealed nonce must be known"),
                     );
