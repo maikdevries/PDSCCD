@@ -64,6 +64,7 @@ impl<'a> Protocol<'a> {
             .map(|node| Query {
                 capacity: 0,
                 path: Vec::new(),
+                source: node,
                 target: node,
                 token: Ciphertext::default(),
             })

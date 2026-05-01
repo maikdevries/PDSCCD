@@ -56,6 +56,7 @@ impl<'a> Participant<'a> {
                 return Query {
                     capacity: self.capacity,
                     path: Vec::new(),
+                    source: node,
                     target: node,
                     token: self.crypto.encrypt(&Crypto::encode(token)),
                 };
@@ -68,7 +69,9 @@ impl<'a> Participant<'a> {
             // [NOTE]
             for path in self.paths.get(&query.target).into_iter().flatten() {
                 // [NOTE]
-                if let Some(capacity) = query.capacity.checked_sub(path.nodes.len()) {
+                if path.target != query.source
+                    && let Some(capacity) = query.capacity.checked_sub(path.nodes.len())
+                {
                     // [NOTE]
                     let token = self.crypto.rerandomise(&query.token);
 
@@ -80,6 +83,7 @@ impl<'a> Participant<'a> {
                             .map(|c| self.crypto.rerandomise(c))
                             .chain(path.nodes.iter().map(|n| token * Scalar::from(*n)))
                             .collect(),
+                        source: query.target,
                         target: path.target,
                         token: token,
                     });
@@ -193,6 +197,7 @@ pub type PID = &'static str;
 pub struct Query {
     pub capacity: usize,
     pub path: Vec<Ciphertext>,
+    pub source: NID,
     pub target: NID,
     pub token: Ciphertext,
 }
