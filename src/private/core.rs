@@ -74,14 +74,8 @@ impl<'a> Participant<'a> {
                         path: query
                             .path
                             .iter()
-                            .chain(
-                                &path
-                                    .nodes
-                                    .iter()
-                                    .map(|n| query.token * Scalar::from(*n))
-                                    .collect::<Vec<Ciphertext>>(),
-                            )
                             .map(|c| self.crypto.rerandomise(c))
+                            .chain(path.nodes.iter().map(|n| query.token * Scalar::from(*n)))
                             .collect(),
                         target: path.target,
                         token: self.crypto.rerandomise(&query.token),
