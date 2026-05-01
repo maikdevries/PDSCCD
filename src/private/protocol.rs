@@ -1,4 +1,8 @@
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::mpsc::{self, Receiver, Sender},
+    thread,
+};
 
 use crate::private::{
     core::{Location, PID, Participant, Query},
@@ -23,32 +27,36 @@ macro_rules! debug_println {
 // ---
 
 pub struct Protocol {
-    participants: HashMap<PID, Participant>,
-    queue: VecDeque<(PID, Vec<Query>)>,
+    channels: HashMap<PID, Sender<Vec<Query>>>,
+    receiver: Receiver<HashMap<PID, Vec<Query>>>,
 }
 
 impl Protocol {
     pub fn new<const N: usize>(participants: [Participant; N]) -> Self {
+        let (sender, receiver) = mpsc::channel();
+
+        let channels = participants
+            .into_iter()
+            .fold(HashMap::new(), |mut map, participant| {
+                // [NOTE]
+                let (tx, rx) = mpsc::channel();
+                map.insert(participant.id, tx);
+
+                // [NOTE]
+                let tx = sender.clone();
+                thread::spawn(move || Protocol::work(participant, rx, tx));
+
+                return map;
+            });
+
         Self {
-            participants: participants.into_iter().map(|p| (p.id, p)).collect(),
-            queue: VecDeque::new(),
+            channels: channels,
+            receiver: receiver,
         }
     }
 
-    pub fn run(&mut self, initiator: PID) -> HashMap<PID, Vec<Component>> {
-        let participant = self
-            .participants
-            .get(initiator)
-            .expect("Participant must have known ID");
-
-        self.queue
-            .push_back((initiator, Protocol::prepare(participant)));
-
-        return self.process();
-    }
-
-    fn prepare(participant: &Participant) -> Vec<Query> {
-        return participant
+    pub fn seed(&self, participant: &Participant) {
+        let queries = participant
             .graph
             .nodes
             .values()
@@ -69,24 +77,47 @@ impl Protocol {
                 token: Ciphertext::default(),
             })
             .collect();
+
+        return self.dispatch([(participant.id, queries)].into());
     }
 
-    fn process(&mut self) -> HashMap<PID, Vec<Component>> {
-        let mut components: HashMap<PID, Vec<Component>> = HashMap::new();
+    fn dispatch(&self, jobs: HashMap<PID, Vec<Query>>) {
+        for (id, queries) in jobs {
+            self.channels
+                .get(id)
+                .expect("Participant must be known to dispatch job")
+                .send(queries)
+                .expect("Channel must be open to dispatch job");
+        }
+    }
 
-        while let Some((id, mut queries)) = self.queue.pop_front() {
-            // [NOTE] Collect all consecutive requests for same participant into single batch
-            while let Some((_, next)) = self.queue.pop_front_if(|(next, _)| *next == id) {
-                queries.extend(next);
-            }
+    pub fn run(self) {
+        let mut pending = 1;
 
-            let participant = self
-                .participants
-                .get_mut(id)
-                .expect("Participant must have known ID");
+        while pending > 0 {
+            let jobs = self.receiver.recv().expect("");
 
+            pending += jobs.len();
+            self.dispatch(jobs);
+
+            pending -= 1;
+        }
+
+        drop(self.channels);
+        drop(self.receiver);
+    }
+
+    fn work(
+        mut participant: Participant,
+        receiver: Receiver<Vec<Query>>,
+        sender: Sender<HashMap<PID, Vec<Query>>>,
+    ) {
+        let mut components: Vec<Component> = Vec::new();
+
+        // [NOTE]
+        for queries in receiver {
             debug_println!();
-            debug_println!("--- PARTICIPANT {id} START ---");
+            debug_println!("--- PARTICIPANT {} START ---", participant.id);
 
             // [NOTE]
             let (known, unknown) = participant.receive(queries);
@@ -118,13 +149,21 @@ impl Protocol {
             );
             debug_println!("Queries: {queries:?}");
 
-            debug_println!("--- PARTICIPANT {id} END ---");
+            debug_println!("--- PARTICIPANT {} END ---", participant.id);
 
             // [NOTE]
-            components.entry(id).or_default().extend(complete);
-            self.queue.extend(queries);
+            components.extend(complete);
+            sender.send(queries).expect("");
         }
 
-        return components;
+        // [NOTE]
+        components.retain(|c| {
+            let mut seen = HashSet::new();
+            return c.iter().all(|x| seen.insert(x));
+        });
+
+        println!();
+        debug_println!("Components: {components:?}");
+        debug_println!("Count: {}", components.len());
     }
 }
