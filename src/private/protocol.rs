@@ -63,7 +63,6 @@ impl<'a> Protocol<'a> {
             .into_iter()
             .map(|node| Query {
                 capacity: 0,
-                from: "",
                 path: Vec::new(),
                 target: node,
                 token: Ciphertext::default(),

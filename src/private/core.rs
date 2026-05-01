@@ -55,7 +55,6 @@ impl<'a> Participant<'a> {
 
                 return Query {
                     capacity: self.capacity,
-                    from: self.id,
                     path: Vec::new(),
                     target: node,
                     token: self.crypto.encrypt(&Crypto::encode(token)),
@@ -72,7 +71,6 @@ impl<'a> Participant<'a> {
                 if let Some(capacity) = query.capacity.checked_sub(path.nodes.len()) {
                     map.entry(path.participant).or_default().push(Query {
                         capacity: capacity,
-                        from: self.id,
                         path: query
                             .path
                             .iter()
@@ -197,7 +195,6 @@ pub type PID = &'static str;
 #[derive(Debug)]
 pub struct Query {
     pub capacity: usize,
-    pub from: PID,
     pub path: Vec<Ciphertext>,
     pub target: NID,
     pub token: Ciphertext,
