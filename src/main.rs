@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use pcd::private::{
     core::{Graph, Location, Node, Participant},
     crypto::Crypto,
@@ -5,7 +7,7 @@ use pcd::private::{
 };
 
 fn main() {
-    let sttp = Crypto::new();
+    let crypto = Arc::new(Crypto::new());
 
     let participants = [
         Participant::new(
@@ -19,7 +21,7 @@ fn main() {
                 Node::new(6, Location::External("C"), [7]),
                 Node::new(7, Location::Internal, [2]),
             ]),
-            &sttp,
+            crypto.clone(),
             6,
         ),
         Participant::new(
@@ -30,7 +32,7 @@ fn main() {
                 Node::new(5, Location::Internal, [6]),
                 Node::new(6, Location::External("C"), [4]),
             ]),
-            &sttp,
+            crypto.clone(),
             6,
         ),
         Participant::new(
@@ -43,7 +45,7 @@ fn main() {
                 Node::new(6, Location::Internal, [4, 7]),
                 Node::new(7, Location::External("A"), []),
             ]),
-            &sttp,
+            crypto.clone(),
             6,
         ),
     ];
