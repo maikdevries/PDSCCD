@@ -61,7 +61,7 @@ impl Elliptic {
     }
 
     fn generate_lookup() -> HashMap<[u8; 32], u32> {
-        let mut lookup = HashMap::new();
+        let mut lookup = HashMap::with_capacity(Self::B as usize);
         let mut baby = RistrettoPoint::default();
 
         // [NOTE]
