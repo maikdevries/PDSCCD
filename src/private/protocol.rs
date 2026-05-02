@@ -27,84 +27,85 @@ macro_rules! debug_println {
 // ---
 
 pub struct Protocol {
-    channels: HashMap<PID, Sender<Vec<Query>>>,
-    receiver: Receiver<HashMap<PID, Vec<Query>>>,
+    participants: HashMap<PID, Participant>,
 }
 
 impl Protocol {
     pub fn new<const N: usize>(participants: [Participant; N]) -> Self {
-        let (sender, receiver) = mpsc::channel();
+        Self {
+            participants: participants.into_iter().map(|p| (p.id, p)).collect(),
+        }
+    }
 
-        let channels = participants
-            .into_iter()
-            .fold(HashMap::new(), |mut map, participant| {
-                // [NOTE]
+    pub fn run(self, initiator: PID) {
+        let participant = self
+            .participants
+            .get(initiator)
+            .expect("Particpant must have known ID");
+
+        // [NOTE]
+        let jobs = Protocol::seed(participant);
+        let mut pending = jobs.len();
+
+        // [NOTE]
+        thread::scope(|scope| {
+            let mut channels = HashMap::new();
+            let (sender, receiver) = mpsc::channel();
+
+            // [NOTE]
+            for (id, participant) in self.participants {
                 let (tx, rx) = mpsc::channel();
-                map.insert(participant.id, tx);
+                channels.insert(id, tx);
 
                 // [NOTE]
                 let tx = sender.clone();
-                thread::spawn(move || Protocol::work(participant, rx, tx));
+                scope.spawn(move || Protocol::work(participant, rx, tx));
+            }
 
-                return map;
-            });
-
-        Self {
-            channels: channels,
-            receiver: receiver,
-        }
-    }
-
-    pub fn seed(&self, participant: &Participant) {
-        let queries = participant
-            .graph
-            .nodes
-            .values()
             // [NOTE]
-            .fold(HashSet::new(), |mut set, node| {
-                if matches!(node.location, Location::External(_)) {
-                    set.extend(&node.neighbours);
+            sender.send(jobs).unwrap();
+
+            // [NOTE]
+            while pending > 0 {
+                // [NOTE]
+                let jobs = receiver.recv().unwrap();
+
+                for (id, queries) in jobs {
+                    channels[id].send(queries).unwrap();
+                    pending += 1;
                 }
 
-                return set;
-            })
-            .into_iter()
-            .map(|node| Query {
-                capacity: 0,
-                path: Vec::new(),
-                source: node,
-                target: node,
-                token: Ciphertext::default(),
-            })
-            .collect();
-
-        return self.dispatch([(participant.id, queries)].into());
+                pending -= 1;
+            }
+        });
     }
 
-    fn dispatch(&self, jobs: HashMap<PID, Vec<Query>>) {
-        for (id, queries) in jobs {
-            self.channels
-                .get(id)
-                .expect("Participant must be known to dispatch job")
-                .send(queries)
-                .expect("Channel must be open to dispatch job");
-        }
-    }
+    fn seed(participant: &Participant) -> HashMap<PID, Vec<Query>> {
+        return [(
+            participant.id,
+            participant
+                .graph
+                .nodes
+                .values()
+                // [NOTE]
+                .fold(HashSet::new(), |mut set, node| {
+                    if matches!(node.location, Location::External(_)) {
+                        set.extend(&node.neighbours);
+                    }
 
-    pub fn run(self) {
-        let mut pending = 1;
-
-        while pending > 0 {
-            let jobs = self.receiver.recv().expect("");
-
-            pending += jobs.len();
-            self.dispatch(jobs);
-
-            pending -= 1;
-        }
-
-        drop(self.channels);
-        drop(self.receiver);
+                    return set;
+                })
+                .into_iter()
+                .map(|node| Query {
+                    capacity: 0,
+                    path: Vec::new(),
+                    source: node,
+                    target: node,
+                    token: Ciphertext::default(),
+                })
+                .collect(),
+        )]
+        .into();
     }
 
     fn work(
