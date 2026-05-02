@@ -37,7 +37,7 @@ impl Protocol {
         }
     }
 
-    pub fn run(self, initiator: PID) {
+    pub fn run(self, initiator: PID) -> HashMap<PID, Vec<Component>> {
         let participant = self
             .participants
             .get(initiator)
@@ -48,9 +48,15 @@ impl Protocol {
         let mut pending = jobs.len();
 
         // [NOTE]
+        let mut results = HashMap::new();
+
+        // [NOTE]
         thread::scope(|scope| {
             let mut channels = HashMap::new();
             let (sender, receiver) = mpsc::channel();
+
+            // [NOTE]
+            let (r_sender, r_receiver) = mpsc::channel();
 
             // [NOTE]
             for (id, participant) in self.participants {
@@ -59,7 +65,8 @@ impl Protocol {
 
                 // [NOTE]
                 let tx = sender.clone();
-                scope.spawn(move || Protocol::work(participant, rx, tx));
+                let rtx = r_sender.clone();
+                scope.spawn(move || Protocol::work(participant, rx, tx, rtx));
             }
 
             // [NOTE]
@@ -77,7 +84,19 @@ impl Protocol {
 
                 pending -= 1;
             }
+
+            pending = channels.len();
+            drop(channels);
+
+            while pending > 0
+                && let Ok((id, components)) = r_receiver.recv()
+            {
+                results.insert(id, components);
+                pending -= 1;
+            }
         });
+
+        return results;
     }
 
     fn seed(participant: &Participant) -> HashMap<PID, Vec<Query>> {
@@ -112,6 +131,7 @@ impl Protocol {
         mut participant: Participant,
         receiver: Receiver<Vec<Query>>,
         sender: Sender<HashMap<PID, Vec<Query>>>,
+        results: Sender<(PID, Vec<Component>)>,
     ) {
         let mut components: Vec<Component> = Vec::new();
 
@@ -154,7 +174,7 @@ impl Protocol {
 
             // [NOTE]
             components.extend(complete);
-            sender.send(queries).expect("");
+            sender.send(queries).unwrap();
         }
 
         // [NOTE]
@@ -163,8 +183,12 @@ impl Protocol {
             return c.iter().all(|x| seen.insert(x));
         });
 
-        println!();
-        debug_println!("Components: {components:?}");
-        debug_println!("Count: {}", components.len());
+        println!(
+            "Participant {} detected {} components",
+            participant.id,
+            components.len(),
+        );
+
+        results.send((participant.id, components)).unwrap();
     }
 }
