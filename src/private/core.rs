@@ -188,6 +188,12 @@ impl Participant {
             }
         }
 
+        // [NOTE]
+        components.retain(|c: &Component| {
+            let mut seen = HashSet::new();
+            return c.iter().all(|x| seen.insert(x));
+        });
+
         return (components, incomplete);
     }
 }

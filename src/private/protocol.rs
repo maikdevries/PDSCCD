@@ -177,12 +177,6 @@ impl Protocol {
             sender.send(queries).unwrap();
         }
 
-        // [NOTE]
-        components.retain(|c| {
-            let mut seen = HashSet::new();
-            return c.iter().all(|x| seen.insert(x));
-        });
-
         println!(
             "Participant {} detected {} components",
             participant.id,
