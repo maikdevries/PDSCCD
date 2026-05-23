@@ -72,7 +72,7 @@ impl Participant {
             // [NOTE]
             for path in self.paths.get(&query.target).into_iter().flatten() {
                 // [NOTE]
-                if path.target != query.source
+                if (path.target != query.source || path.nodes.len() > 1)
                     && let Some(capacity) = query.capacity.checked_sub(path.nodes.len())
                 {
                     // [NOTE]
