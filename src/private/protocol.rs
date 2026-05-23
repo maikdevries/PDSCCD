@@ -142,23 +142,23 @@ impl Protocol {
 
             // [NOTE]
             let (known, unknown) = participant.receive(queries);
-            debug_println!("Known: {known:?}");
-            debug_println!("Unknown: {unknown:?}");
+            debug_println!("[{}] - Known: {known:?}", participant.id);
+            debug_println!("[{}] - Unknown: {unknown:?}", participant.id);
 
             // [NOTE]
             let (complete, incomplete) = participant.decrypt(known);
-            debug_println!("Complete: {complete:?}");
-            debug_println!("Incomplete: {incomplete:?}");
+            debug_println!("[{}] - Complete: {complete:?}", participant.id);
+            debug_println!("[{}] - Incomplete: {incomplete:?}", participant.id);
 
             let targets = unknown.iter().map(|query| query.target).collect();
 
             // [NOTE]
             let detected = participant.detect(&targets);
-            debug_println!("Detected: {detected:?}");
+            debug_println!("[{}] - Detected: {detected:?}", participant.id);
 
             // [NOTE]
             let registered = participant.register(targets);
-            debug_println!("Registered: {registered:?}");
+            debug_println!("[{}] - Registered: {registered:?}", participant.id);
 
             // [NOTE]
             let queries = participant.forward(
@@ -168,7 +168,7 @@ impl Protocol {
                     .chain(registered)
                     .collect(),
             );
-            debug_println!("Queries: {queries:?}");
+            debug_println!("[{}] - Queries: {queries:?}", participant.id);
 
             debug_println!("--- PARTICIPANT {} END ---", participant.id);
 
