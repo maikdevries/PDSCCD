@@ -86,7 +86,7 @@ impl Participant {
                             .map(|c| self.crypto.rerandomise(c))
                             .chain(path.nodes.iter().map(|n| token * Scalar::from(*n)))
                             .collect(),
-                        source: query.target,
+                        source: *path.nodes.last().unwrap(),
                         target: path.target,
                         token: token,
                     });
