@@ -74,11 +74,12 @@ impl Participant {
                 // [NOTE]
                 if (path.target != query.source || path.nodes.len() > 1)
                     && let Some(capacity) = query.capacity.checked_sub(path.nodes.len())
+                    && let Location::External(participant) = self.graph.nodes[&path.target].location
                 {
                     // [NOTE]
                     let token = self.crypto.rerandomise(&query.token);
 
-                    map.entry(path.participant).or_default().push(Query {
+                    map.entry(participant).or_default().push(Query {
                         capacity: capacity,
                         path: query
                             .path

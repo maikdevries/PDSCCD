@@ -8,7 +8,6 @@ pub type Component = Vec<NID>;
 #[derive(Clone, Debug)]
 pub struct Path {
     pub nodes: Component,
-    pub participant: PID,
     pub target: NID,
 }
 
@@ -60,10 +59,9 @@ impl<'a> Tarjan<'a> {
 
         for w in self.graph.nodes[&v].neighbours.iter() {
             // [NOTE]
-            if let Location::External(participant) = self.graph.nodes[w].location {
+            if let Location::External(_) = self.graph.nodes[w].location {
                 self.paths.entry(v).or_default().push(Path {
                     nodes: [v].into(),
-                    participant: participant,
                     target: *w,
                 });
 
@@ -73,7 +71,6 @@ impl<'a> Tarjan<'a> {
                     .iter()
                     .map(|path| Path {
                         nodes: [v].iter().chain(&path.nodes).copied().collect(),
-                        participant: path.participant,
                         target: path.target,
                     })
                     .collect();
@@ -92,7 +89,6 @@ impl<'a> Tarjan<'a> {
                         .iter()
                         .map(|path| Path {
                             nodes: [v].iter().chain(&path.nodes).copied().collect(),
-                            participant: path.participant,
                             target: path.target,
                         })
                         .collect();
