@@ -157,15 +157,16 @@ impl Participant {
             // [NOTE]
             for unseal in unsealed {
                 let bytes = (unseal.token * beta).compress().to_bytes();
+                let query = qache
+                    .remove(&unseal.nonce)
+                    .expect("Unsealed nonce must be known");
 
                 if let Some(nonce) = blinds.get(&bytes) {
                     let gamma = Scalar::random(&mut rand::rng());
                     let inverse = bache.get(nonce).expect("Blind nonce must be known");
 
                     // [NOTE]
-                    let component = qache
-                        .remove(&unseal.nonce)
-                        .expect("Unsealed nonce must be known")
+                    let component = query
                         .path
                         .into_iter()
                         .map(|c| {
@@ -179,11 +180,7 @@ impl Participant {
 
                     components.push(component);
                 } else {
-                    incomplete.push(
-                        qache
-                            .remove(&unseal.nonce)
-                            .expect("Unsealed nonce must be known"),
-                    );
+                    incomplete.push(query);
                 }
             }
         }
