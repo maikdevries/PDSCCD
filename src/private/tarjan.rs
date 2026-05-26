@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::private::core::{Graph, Location, NID, PID};
+use crate::private::core::{Graph, Location, NID};
 
 pub type Component = Vec<NID>;
 
@@ -99,7 +99,9 @@ impl<'a> Tarjan<'a> {
                 scc.push(w);
             }
 
-            self.components.push(scc);
+            if scc.len() > 1 {
+                self.components.push(scc);
+            }
         }
     }
 }

@@ -44,8 +44,7 @@ impl Participant {
         // [NOTE]
         self.paths.extend(paths);
 
-        // [NOTE] Filter out trivial components (i.e. consist of a single node)
-        return components.into_iter().filter(|c| c.len() > 1).collect();
+        return components;
     }
 
     pub fn register(&mut self, nodes: HashSet<NID>) -> Vec<Query> {
