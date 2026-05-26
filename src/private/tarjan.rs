@@ -66,7 +66,18 @@ impl<'a> Tarjan<'a> {
                 });
 
             // [NOTE]
-            } else if self.paths.contains_key(w) {
+            } else if !self.number.contains_key(w) {
+                self.strong_connect(*w);
+                self.lowlink
+                    .insert(v, self.lowlink[&v].min(self.lowlink[w]));
+
+            // [NOTE]
+            } else if self.number[w] < self.number[&v] && self.stack.contains(w) {
+                self.lowlink.insert(v, self.lowlink[&v].min(self.number[w]));
+            }
+
+            // [NOTE]
+            if self.paths.contains_key(w) {
                 let paths: Vec<Path> = self.paths[w]
                     .iter()
                     .map(|path| Path {
@@ -76,29 +87,6 @@ impl<'a> Tarjan<'a> {
                     .collect();
 
                 self.paths.entry(v).or_default().extend(paths);
-
-            // [NOTE]
-            } else if !self.number.contains_key(w) {
-                self.strong_connect(*w);
-                self.lowlink
-                    .insert(v, self.lowlink[&v].min(self.lowlink[w]));
-
-                // [NOTE]
-                if self.paths.contains_key(w) {
-                    let paths: Vec<Path> = self.paths[w]
-                        .iter()
-                        .map(|path| Path {
-                            nodes: [v].iter().chain(&path.nodes).copied().collect(),
-                            target: path.target,
-                        })
-                        .collect();
-
-                    self.paths.entry(v).or_default().extend(paths);
-                }
-
-            // [NOTE]
-            } else if self.number[w] < self.number[&v] && self.stack.contains(w) {
-                self.lowlink.insert(v, self.lowlink[&v].min(self.number[w]));
             }
         }
 
