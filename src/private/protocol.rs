@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::private::{
-    core::{Location, PID, Participant, Query},
+    core::{Location, Message, NID, PID, Participant},
     crypto::Ciphertext,
     tarjan::Component,
 };
@@ -99,7 +99,7 @@ impl Protocol {
         return results;
     }
 
-    fn seed(participant: &Participant) -> HashMap<PID, Vec<Query>> {
+    fn seed(participant: &Participant) -> HashMap<PID, Vec<Message>> {
         return [(
             participant.id,
             participant
@@ -115,9 +115,9 @@ impl Protocol {
                     return set;
                 })
                 .into_iter()
-                .map(|node| Query {
+                .map(|node| Message {
                     capacity: 0,
-                    path: Vec::new(),
+                    nodes: Vec::new(),
                     source: node,
                     target: node,
                     token: Ciphertext::default(),
@@ -129,8 +129,8 @@ impl Protocol {
 
     fn work(
         mut participant: Participant,
-        receiver: Receiver<Vec<Query>>,
-        sender: Sender<HashMap<PID, Vec<Query>>>,
+        receiver: Receiver<Vec<Message>>,
+        sender: Sender<HashMap<PID, Vec<Message>>>,
         results: Sender<(PID, Vec<Component>)>,
     ) {
         let mut components: Vec<Component> = Vec::new();
@@ -150,7 +150,7 @@ impl Protocol {
             debug_println!("[{}] - Complete: {complete:?}", participant.id);
             debug_println!("[{}] - Incomplete: {incomplete:?}", participant.id);
 
-            let targets = unknown.iter().map(|query| query.target).collect();
+            let targets = unknown.iter().map(|message| message.target).collect();
 
             // [NOTE]
             let detected = participant.detect(&targets);

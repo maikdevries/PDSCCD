@@ -31,11 +31,11 @@ impl Participant {
         }
     }
 
-    pub fn receive(&self, queries: Vec<Query>) -> (Vec<Query>, Vec<Query>) {
+    pub fn receive(&self, messages: Vec<Message>) -> (Vec<Message>, Vec<Message>) {
         // [NOTE]
-        return queries
+        return messages
             .into_iter()
-            .partition(|query| self.tokens.contains_key(&query.target));
+            .partition(|message| self.tokens.contains_key(&message.target));
     }
 
     pub fn detect(&mut self, targets: &HashSet<NID>) -> Vec<Component> {
@@ -47,7 +47,7 @@ impl Participant {
         return components;
     }
 
-    pub fn register(&mut self, nodes: HashSet<NID>) -> Vec<Query> {
+    pub fn register(&mut self, nodes: HashSet<NID>) -> Vec<Message> {
         // [NOTE]
         return nodes
             .into_iter()
@@ -55,9 +55,9 @@ impl Participant {
                 let token = Scalar::random(&mut rand::rng());
                 self.tokens.insert(node, token);
 
-                return Query {
+                return Message {
                     capacity: self.capacity,
-                    path: Vec::new(),
+                    nodes: Vec::new(),
                     source: node,
                     target: node,
                     token: self.crypto.encrypt(&Crypto::encode(token)),
@@ -66,44 +66,50 @@ impl Participant {
             .collect();
     }
 
-    pub fn forward(&self, queries: Vec<Query>) -> HashMap<PID, Vec<Query>> {
-        return queries.into_iter().fold(HashMap::new(), |mut map, query| {
-            // [NOTE]
-            for path in self.paths.get(&query.target).into_iter().flatten() {
+    pub fn forward(&self, messages: Vec<Message>) -> HashMap<PID, Vec<Message>> {
+        return messages
+            .into_iter()
+            .fold(HashMap::new(), |mut map, message| {
                 // [NOTE]
-                if (path.target != query.source || path.nodes.len() > 1)
-                    && let Some(capacity) = query.capacity.checked_sub(path.nodes.len())
-                    && let Location::External(participant) = self.graph.nodes[&path.target].location
-                {
+                for path in self.paths.get(&message.target).into_iter().flatten() {
                     // [NOTE]
-                    let token = self.crypto.rerandomise(&query.token);
+                    if path.target != message.source
+                        && let Some(capacity) = message.capacity.checked_sub(path.nodes.len())
+                        && let Location::External(participant) =
+                            self.graph.nodes[&path.target].location
+                    {
+                        // [NOTE]
+                        let token = self.crypto.rerandomise(&message.token);
 
-                    map.entry(participant).or_default().push(Query {
-                        capacity: capacity,
-                        path: query
-                            .path
-                            .iter()
-                            .map(|c| self.crypto.rerandomise(c))
-                            .chain(path.nodes.iter().map(|n| token * Scalar::from(*n)))
-                            .collect(),
-                        source: *path.nodes.last().unwrap(),
-                        target: path.target,
-                        token: token,
-                    });
+                        map.entry(participant).or_default().push(Message {
+                            capacity: capacity,
+                            nodes: message
+                                .nodes
+                                .iter()
+                                .map(|c| self.crypto.rerandomise(c))
+                                .chain(path.nodes.iter().map(|n| token * Scalar::from(*n)))
+                                .collect(),
+                            source: path.exit,
+                            target: path.target,
+                            token: token,
+                        });
+                    }
                 }
             }
 
-            return map;
-        });
-    }
-
-    pub fn decrypt(&self, queries: Vec<Query>) -> (Vec<Component>, Vec<Query>) {
-        // [NOTE]
-        let groups: HashMap<NID, Vec<Query>> =
-            queries.into_iter().fold(HashMap::new(), |mut map, query| {
-                map.entry(query.target).or_default().push(query);
                 return map;
             });
+    }
+
+    pub fn decrypt(&self, messages: Vec<Message>) -> (Vec<Component>, Vec<Message>) {
+        // [NOTE]
+        let groups: HashMap<NID, Vec<Message>> =
+            messages
+                .into_iter()
+                .fold(HashMap::new(), |mut map, message| {
+                    map.entry(message.target).or_default().push(message);
+                    return map;
+                });
 
         let mut components = Vec::new();
         let mut incomplete = Vec::new();
@@ -116,13 +122,13 @@ impl Participant {
             let mut cache = HashMap::with_capacity(queries.len());
             let seals = queries
                 .into_iter()
-                .map(|query| {
+                .map(|message| {
                     let seal = Sealed {
                         nonce: rand::random::<u128>(),
-                        token: query.token * alpha,
+                        token: message.token * alpha,
                     };
 
-                    cache.insert(seal.nonce, query);
+                    cache.insert(seal.nonce, message);
                     return seal;
                 })
                 .collect();
@@ -137,14 +143,14 @@ impl Participant {
 
             // [NOTE]
             for unseal in unsealed {
-                let query = cache.remove(&unseal.nonce).unwrap();
+                let message = cache.remove(&unseal.nonce).unwrap();
 
                 if unseal.token * beta == blind {
                     let gamma = Scalar::random(&mut rand::rng());
 
                     // [NOTE]
-                    let component = query
-                        .path
+                    let component: Component = message
+                        .nodes
                         .into_iter()
                         .map(|c| {
                             self.crypto
@@ -159,7 +165,7 @@ impl Participant {
 
                     components.push(component);
                 } else {
-                    incomplete.push(query);
+                    incomplete.push(message);
                 }
             }
         }
@@ -179,9 +185,9 @@ pub type PID = &'static str;
 
 // [TODO]
 #[derive(Debug)]
-pub struct Query {
+pub struct Message {
     pub capacity: usize,
-    pub path: Vec<Ciphertext>,
+    pub nodes: Vec<Ciphertext>,
     pub source: NID,
     pub target: NID,
     pub token: Ciphertext,
