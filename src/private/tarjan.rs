@@ -2,11 +2,12 @@ use std::collections::{HashMap, HashSet};
 
 use crate::private::core::{Graph, Location, NID};
 
-pub type Component = Vec<NID>;
+pub type Component = HashSet<NID>;
 
 // [TODO]
 #[derive(Clone, Debug)]
 pub struct Path {
+    pub exit: NID,
     pub nodes: Component,
     pub target: NID,
 }
@@ -61,6 +62,7 @@ impl<'a> Tarjan<'a> {
             // [NOTE]
             if let Location::External(_) = self.graph.nodes[w].location {
                 self.paths.entry(v).or_default().push(Path {
+                    exit: v,
                     nodes: [v].into(),
                     target: *w,
                 });
@@ -81,6 +83,7 @@ impl<'a> Tarjan<'a> {
                 let paths: Vec<Path> = self.paths[w]
                     .iter()
                     .map(|path| Path {
+                        exit: path.exit,
                         nodes: [v].iter().chain(&path.nodes).copied().collect(),
                         target: path.target,
                     })
@@ -92,11 +95,11 @@ impl<'a> Tarjan<'a> {
 
         // [NOTE]
         if self.lowlink[&v] == self.number[&v] {
-            let mut scc = Vec::new();
+            let mut scc = HashSet::new();
 
             // [NOTE]
             while let Some(w) = self.stack.pop_if(|w| self.number[w] >= self.number[&v]) {
-                scc.push(w);
+                scc.insert(w);
             }
 
             if scc.len() > 1 {

@@ -42,7 +42,9 @@ impl Participant {
         let (components, paths) = Tarjan::new(&self.graph).detect(targets);
 
         // [NOTE]
-        self.paths.extend(paths);
+        for (k, v) in paths {
+            self.paths.entry(k).or_default().extend(v);
+        }
 
         return components;
     }
@@ -95,13 +97,12 @@ impl Participant {
                         });
                     }
                 }
-            }
 
                 return map;
             });
     }
 
-    pub fn decrypt(&self, messages: Vec<Message>) -> (Vec<Component>, Vec<Message>) {
+    pub fn decrypt(&self, messages: Vec<Message>) -> (HashMap<NID, Component>, Vec<Message>) {
         // [NOTE]
         let groups: HashMap<NID, Vec<Message>> =
             messages
@@ -111,7 +112,7 @@ impl Participant {
                     return map;
                 });
 
-        let mut components = Vec::new();
+        let mut components: HashMap<NID, Component> = HashMap::new();
         let mut incomplete = Vec::new();
 
         for (node, queries) in groups {
@@ -163,18 +164,12 @@ impl Participant {
                         })
                         .collect();
 
-                    components.push(component);
+                    components.entry(node).or_default().extend(component);
                 } else {
                     incomplete.push(message);
                 }
             }
         }
-
-        // [NOTE]
-        components.retain(|c: &Component| {
-            let mut seen = HashSet::new();
-            return c.iter().all(|x| seen.insert(x));
-        });
 
         return (components, incomplete);
     }

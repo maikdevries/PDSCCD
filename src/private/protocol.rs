@@ -37,7 +37,7 @@ impl Protocol {
         }
     }
 
-    pub fn run(self, initiator: PID) -> HashMap<PID, Vec<Component>> {
+    pub fn run(self, initiator: PID) -> HashMap<PID, HashMap<NID, Component>> {
         let participant = self
             .participants
             .get(initiator)
@@ -131,9 +131,9 @@ impl Protocol {
         mut participant: Participant,
         receiver: Receiver<Vec<Message>>,
         sender: Sender<HashMap<PID, Vec<Message>>>,
-        results: Sender<(PID, Vec<Component>)>,
+        results: Sender<(PID, HashMap<NID, Component>)>,
     ) {
-        let mut components: Vec<Component> = Vec::new();
+        let mut components: HashMap<NID, Component> = HashMap::new();
 
         // [NOTE]
         for queries in receiver {
@@ -173,7 +173,11 @@ impl Protocol {
             debug_println!("--- PARTICIPANT {} END ---", participant.id);
 
             // [NOTE]
-            components.extend(complete);
+            for (k, v) in complete {
+                components.entry(k).or_default().extend(v);
+            }
+
+            // [NOTE]
             sender.send(queries).unwrap();
         }
 
