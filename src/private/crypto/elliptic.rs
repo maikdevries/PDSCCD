@@ -55,7 +55,7 @@ impl Elliptic {
 
         Self {
             lookup: Self::generate_lookup(),
-            public: RistrettoPoint::mul_base(&secret),
+            public: Self::encode(secret),
             secret: secret,
         }
     }
@@ -85,7 +85,7 @@ impl Elliptic {
 
         Ciphertext {
             message: plaintext + r * self.public,
-            randomness: RistrettoPoint::mul_base(&r),
+            randomness: Self::encode(r),
         }
     }
 
@@ -98,7 +98,7 @@ impl Elliptic {
 
         Ciphertext {
             message: cipher.message + r * self.public,
-            randomness: cipher.randomness + RistrettoPoint::mul_base(&r),
+            randomness: cipher.randomness + Self::encode(r),
         }
     }
 
@@ -139,7 +139,7 @@ impl Elliptic {
                 return Some(i * Self::B + j);
             }
 
-            giant -= RistrettoPoint::mul_base(&Scalar::from(Self::B));
+            giant -= Self::encode(Self::B);
         }
 
         return None;
