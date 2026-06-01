@@ -5,7 +5,7 @@ use std::{
 };
 
 use crate::private::{
-    crypto::{Ciphertext, Crypto, Sealed, Unsealed},
+    crypto::{Ciphertext, Crypto, Sealed},
     tarjan::{Component, Path, Tarjan},
 };
 
@@ -16,7 +16,7 @@ pub struct Participant {
     pub graph: Graph,
     pub id: PID,
     paths: HashMap<NID, Vec<Path>>,
-    tokens: HashMap<NID, Vec<Scalar>>,
+    tokens: HashMap<NID, Scalar>,
 }
 
 impl Participant {
@@ -35,7 +35,7 @@ impl Participant {
         // [NOTE]
         return queries
             .into_iter()
-            .partition(|query| self.tokens.get(&query.target).is_some());
+            .partition(|query| self.tokens.contains_key(&query.target));
     }
 
     pub fn detect(&mut self, targets: &HashSet<NID>) -> Vec<Component> {
@@ -53,7 +53,7 @@ impl Participant {
             .into_iter()
             .map(|node| {
                 let token = Scalar::random(&mut rand::rng());
-                self.tokens.entry(node).or_default().push(token);
+                self.tokens.insert(node, token);
 
                 return Query {
                     capacity: self.capacity,
@@ -109,13 +109,11 @@ impl Participant {
         let mut incomplete = Vec::new();
 
         for (node, queries) in groups {
-            let mut bache = HashMap::new();
-            let mut qache = HashMap::new();
-
             let alpha = Scalar::random(&mut rand::rng());
             let beta = Scalar::random(&mut rand::rng());
 
             // [NOTE]
+            let mut cache = HashMap::with_capacity(queries.len());
             let seals = queries
                 .into_iter()
                 .map(|query| {
@@ -124,46 +122,25 @@ impl Participant {
                         token: query.token * alpha,
                     };
 
-                    qache.insert(seal.nonce, query);
+                    cache.insert(seal.nonce, query);
                     return seal;
                 })
                 .collect();
 
             // [NOTE]
-            let blinds = self
-                .tokens
-                .get(&node)
-                .expect("Target node tokens must be known to decrypt")
-                .iter()
-                .map(|token| {
-                    let nonce = rand::random::<u128>();
-                    bache.insert(nonce, token.invert());
-
-                    return Unsealed {
-                        nonce: nonce,
-                        token: Crypto::encode(*token) * beta,
-                    };
-                })
-                .collect();
-
-            let (unsealed, blinds) = self.crypto.unseal(seals, blinds);
+            let token = self.tokens.get(&node).unwrap();
+            let blind = Crypto::encode(*token) * beta;
 
             // [NOTE]
-            let blinds: HashMap<[u8; 32], u128> = blinds
-                .into_iter()
-                .map(|blind| ((blind.token * alpha).compress().to_bytes(), blind.nonce))
-                .collect();
+            let (unsealed, blind) = self.crypto.unseal(seals, blind);
+            let blind = blind * alpha;
 
             // [NOTE]
             for unseal in unsealed {
-                let bytes = (unseal.token * beta).compress().to_bytes();
-                let query = qache
-                    .remove(&unseal.nonce)
-                    .expect("Unsealed nonce must be known");
+                let query = cache.remove(&unseal.nonce).unwrap();
 
-                if let Some(nonce) = blinds.get(&bytes) {
+                if unseal.token * beta == blind {
                     let gamma = Scalar::random(&mut rand::rng());
-                    let inverse = bache.get(nonce).expect("Blind nonce must be known");
 
                     // [NOTE]
                     let component = query
@@ -172,7 +149,9 @@ impl Participant {
                         .map(|c| {
                             self.crypto
                                 .recover(
-                                    &(self.crypto.decrypt(&(c * gamma)) * gamma.invert() * inverse),
+                                    &(self.crypto.decrypt(&(c * gamma))
+                                        * gamma.invert()
+                                        * token.invert()),
                                 )
                                 .unwrap()
                         })
