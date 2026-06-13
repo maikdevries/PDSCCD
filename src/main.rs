@@ -3,7 +3,7 @@ use std::{collections::HashMap, fs::File, io::BufWriter, path::Path, sync::Arc, 
 use pcd::private::{
     core::{Graph, Location, Node, PID, Participant},
     crypto::Crypto,
-    protocol::Protocol,
+    protocol::{Protocol, Resources},
 };
 
 struct Parameters {
@@ -147,23 +147,23 @@ fn main() {
         ),
     ];
 
-    let mut timings: HashMap<PID, Vec<HashMap<&str, Duration>>> = HashMap::new();
+    let mut resources: HashMap<PID, Vec<Resources>> = HashMap::new();
 
     for _ in 0..parameters.iterations {
-        let (_, ts) = Protocol::new(participants.clone()).run("A");
-        for (pid, ts) in ts {
-            timings.entry(pid).or_default().push(ts);
+        let (_, rs) = Protocol::new(participants.clone()).run("A");
+        for (pid, rs) in rs {
+            resources.entry(pid).or_default().push(rs);
         }
     }
 
-    if let Err(_) = write_to_file(timings, parameters) {
+    if let Err(_) = write_to_file(resources, parameters) {
         eprintln!();
         eprintln!("TIMINGS HAVE NOT BEEN WRITTEN TO DISK!");
     };
 }
 
 fn write_to_file(
-    timings: HashMap<PID, Vec<HashMap<&str, Duration>>>,
+    resources: HashMap<PID, Vec<Resources>>,
     parameters: Parameters,
 ) -> std::io::Result<()> {
     let filename = format!(
@@ -173,24 +173,6 @@ fn write_to_file(
     let file = File::create_new(Path::new("./benchmarks").join(filename))?;
     let writer = BufWriter::new(file);
 
-    // [NOTE]
-    let output: HashMap<PID, Vec<HashMap<&str, u128>>> = timings
-        .into_iter()
-        .map(|(pid, timings)| {
-            (
-                pid,
-                timings
-                    .into_iter()
-                    .map(|x| {
-                        x.into_iter()
-                            .map(|(label, duration)| (label, duration.as_nanos()))
-                            .collect()
-                    })
-                    .collect(),
-            )
-        })
-        .collect();
-
-    serde_json::to_writer_pretty(writer, &output)?;
+    serde_json::to_writer_pretty(writer, &resources)?;
     return Ok(());
 }

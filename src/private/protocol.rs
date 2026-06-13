@@ -27,6 +27,12 @@ macro_rules! debug_println {
 
 // ---
 
+#[derive(serde::Serialize)]
+pub struct Resources {
+    pub messages: usize,
+    pub time: HashMap<&'static str, u128>,
+}
+
 pub struct Protocol {
     participants: HashMap<PID, Participant>,
 }
@@ -43,7 +49,7 @@ impl Protocol {
         initiator: PID,
     ) -> (
         HashMap<PID, HashMap<NID, Component>>,
-        HashMap<PID, HashMap<&'static str, Duration>>,
+        HashMap<PID, Resources>,
     ) {
         let participant = self
             .participants
@@ -56,7 +62,7 @@ impl Protocol {
 
         // [NOTE]
         let mut components = HashMap::new();
-        let mut timings = HashMap::new();
+        let mut resources = HashMap::new();
 
         // [NOTE]
         thread::scope(|scope| {
@@ -97,16 +103,16 @@ impl Protocol {
             drop(channels);
 
             while pending > 0
-                && let Ok((id, cs, ts)) = r_receiver.recv()
+                && let Ok((id, cs, rs)) = r_receiver.recv()
             {
                 components.insert(id, cs);
-                timings.insert(id, ts);
+                resources.insert(id, rs);
 
                 pending -= 1;
             }
         });
 
-        return (components, timings);
+        return (components, resources);
     }
 
     fn seed(participant: &Participant) -> HashMap<PID, Vec<Message>> {
@@ -141,10 +147,10 @@ impl Protocol {
         mut participant: Participant,
         receiver: Receiver<Vec<Message>>,
         sender: Sender<HashMap<PID, Vec<Message>>>,
-        results: Sender<(PID, HashMap<NID, Component>, HashMap<&str, Duration>)>,
+        results: Sender<(PID, HashMap<NID, Component>, Resources)>,
     ) {
         let mut components: HashMap<NID, Component> = HashMap::new();
-        let mut timings: HashMap<&str, Duration> = HashMap::new();
+        let mut time: HashMap<&str, u128> = HashMap::new();
 
         // [NOTE]
         macro_rules! time {
@@ -152,18 +158,21 @@ impl Protocol {
                 let t = Instant::now();
                 let result = $expr;
 
-                *timings.entry($label).or_default() += t.elapsed();
+                *time.entry($label).or_default() += t.elapsed().as_nanos();
                 result
             }};
         }
 
         // [NOTE]
-        let total = Instant::now();
+        let mut m = 0;
+        let t = Instant::now();
 
         // [NOTE]
         for queries in receiver {
             debug_println!();
             debug_println!("--- PARTICIPANT {} START ---", participant.id);
+
+            m += queries.len();
 
             // [NOTE]
             let (known, unknown) = time!("receive", participant.receive(queries));
@@ -209,16 +218,25 @@ impl Protocol {
             sender.send(queries).unwrap();
         }
 
-        let total = total.elapsed();
-        timings.insert("total", total);
+        let t = t.elapsed();
+        time.insert("total", t.as_nanos());
 
         debug_println!(
             "Participant {} detected {} components in {:?}",
             participant.id,
             components.len(),
-            total
+            t
         );
 
-        results.send((participant.id, components, timings)).unwrap();
+        results
+            .send((
+                participant.id,
+                components,
+                Resources {
+                    messages: m,
+                    time: time,
+                },
+            ))
+            .unwrap();
     }
 }
