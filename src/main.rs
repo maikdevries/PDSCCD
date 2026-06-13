@@ -1,25 +1,27 @@
 use std::{collections::HashMap, fs::File, io::BufWriter, path::Path, sync::Arc, time::Duration};
 
 use pcd::private::{
-    core::{Graph, Location, Node, Participant},
+    core::{Graph, Location, Node, PID, Participant},
     crypto::Crypto,
     protocol::Protocol,
 };
 
 struct Parameters {
-    participants: usize,
-    nodes: usize,
     edges: usize,
+    iterations: usize,
     length: usize,
+    nodes: usize,
+    participants: usize,
 }
 
 fn main() {
     let crypto = Arc::new(Crypto::new());
     let parameters = Parameters {
-        participants: 8,
-        nodes: 1,
         edges: 8,
+        iterations: 5,
         length: 4,
+        nodes: 1,
+        participants: 8,
     };
 
     let participants = [
@@ -145,13 +147,14 @@ fn main() {
         ),
     ];
 
-    let (components, timings) = Protocol::new(participants).run("A");
+    let mut timings: HashMap<PID, Vec<HashMap<&str, Duration>>> = HashMap::new();
 
-    println!();
-    println!("Components: {components:?}");
-
-    println!();
-    println!("Timings: {timings:?}");
+    for _ in 0..parameters.iterations {
+        let (_, ts) = Protocol::new(participants.clone()).run("A");
+        for (pid, ts) in ts {
+            timings.entry(pid).or_default().push(ts);
+        }
+    }
 
     if let Err(_) = write_to_file(timings, parameters) {
         eprintln!();
@@ -160,7 +163,7 @@ fn main() {
 }
 
 fn write_to_file(
-    timings: HashMap<&str, HashMap<&str, Duration>>,
+    timings: HashMap<PID, Vec<HashMap<&str, Duration>>>,
     parameters: Parameters,
 ) -> std::io::Result<()> {
     let filename = format!(
@@ -171,14 +174,18 @@ fn write_to_file(
     let writer = BufWriter::new(file);
 
     // [NOTE]
-    let output: HashMap<&str, HashMap<&str, u128>> = timings
+    let output: HashMap<PID, Vec<HashMap<&str, u128>>> = timings
         .into_iter()
         .map(|(pid, timings)| {
             (
                 pid,
                 timings
                     .into_iter()
-                    .map(|(function, duration)| (function, duration.as_nanos()))
+                    .map(|x| {
+                        x.into_iter()
+                            .map(|(label, duration)| (label, duration.as_nanos()))
+                            .collect()
+                    })
                     .collect(),
             )
         })

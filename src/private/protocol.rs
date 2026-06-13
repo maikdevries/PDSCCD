@@ -141,15 +141,12 @@ impl Protocol {
         mut participant: Participant,
         receiver: Receiver<Vec<Message>>,
         sender: Sender<HashMap<PID, Vec<Message>>>,
-        results: Sender<(
-            PID,
-            HashMap<NID, Component>,
-            HashMap<&'static str, Duration>,
-        )>,
+        results: Sender<(PID, HashMap<NID, Component>, HashMap<&str, Duration>)>,
     ) {
         let mut components: HashMap<NID, Component> = HashMap::new();
         let mut timings: HashMap<&str, Duration> = HashMap::new();
 
+        // [NOTE]
         macro_rules! time {
             ($label:literal, $expr:expr) => {{
                 let t = Instant::now();
@@ -159,6 +156,9 @@ impl Protocol {
                 result
             }};
         }
+
+        // [NOTE]
+        let total = Instant::now();
 
         // [NOTE]
         for queries in receiver {
@@ -209,10 +209,14 @@ impl Protocol {
             sender.send(queries).unwrap();
         }
 
+        let total = total.elapsed();
+        timings.insert("total", total);
+
         debug_println!(
-            "Participant {} detected {} components",
+            "Participant {} detected {} components in {:?}",
             participant.id,
-            components.len()
+            components.len(),
+            total
         );
 
         results.send((participant.id, components, timings)).unwrap();
