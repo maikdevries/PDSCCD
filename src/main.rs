@@ -50,10 +50,11 @@ fn main() {
         ),
     ];
 
-    let start = std::time::Instant::now();
-    let components = Protocol::new(participants).run("A");
+    let (components, timings) = Protocol::new(participants).run("A");
 
     println!();
     println!("Components: {components:?}");
-    println!("Duration: {:?}", std::time::Instant::now() - start);
+
+    println!();
+    println!("Timings: {timings:?}");
 }
