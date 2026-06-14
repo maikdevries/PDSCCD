@@ -29,7 +29,9 @@ macro_rules! debug_println {
 
 #[derive(serde::Serialize)]
 pub struct Resources {
+    pub communication: HashMap<&'static str, u128>,
     pub messages: usize,
+    pub space: HashMap<&'static str, u128>,
     pub time: HashMap<&'static str, u128>,
 }
 
@@ -150,6 +152,9 @@ impl Protocol {
         results: Sender<(PID, HashMap<NID, Component>, Resources)>,
     ) {
         let mut components: HashMap<NID, Component> = HashMap::new();
+
+        let mut communication: HashMap<&str, u128> = HashMap::new();
+        let mut space: HashMap<&str, u128> = HashMap::new();
         let mut time: HashMap<&str, u128> = HashMap::new();
 
         // [NOTE]
@@ -173,6 +178,7 @@ impl Protocol {
             debug_println!("--- PARTICIPANT {} START ---", participant.id);
 
             m += queries.len();
+            *space.entry("receive").or_default() += std::mem::size_of_val(&queries) as u128;
 
             // [NOTE]
             let (known, unknown) = time!("receive", participant.receive(queries));
@@ -180,19 +186,26 @@ impl Protocol {
             debug_println!("[{}] - Unknown: {unknown:?}", participant.id);
 
             // [NOTE]
-            let (complete, incomplete) = time!("decrypt", participant.decrypt(known));
+            let (complete, incomplete, cs, ss) = time!("decrypt", participant.decrypt(known));
             debug_println!("[{}] - Complete: {complete:?}", participant.id);
             debug_println!("[{}] - Incomplete: {incomplete:?}", participant.id);
+
+            *communication.entry("decrypt").or_default() += cs;
+            *space.entry("decrypt").or_default() += ss;
 
             let targets = unknown.iter().map(|message| message.target).collect();
 
             // [NOTE]
-            let detected = time!("detect", participant.detect(&targets));
+            let (detected, ss) = time!("detect", participant.detect(&targets));
             debug_println!("[{}] - Detected: {detected:?}", participant.id);
 
+            *space.entry("detect").or_default() += ss;
+
             // [NOTE]
-            let registered = time!("register", participant.register(targets));
+            let (registered, ss) = time!("register", participant.register(targets));
             debug_println!("[{}] - Registered: {registered:?}", participant.id);
+
+            *space.entry("register").or_default() += ss;
 
             // [NOTE]
             let queries = time!(
@@ -206,6 +219,11 @@ impl Protocol {
                 )
             );
             debug_println!("[{}] - Queries: {queries:?}", participant.id);
+            *communication.entry("forward").or_default() += queries
+                .values()
+                .flatten()
+                .map(|m| std::mem::size_of_val(m) as u128)
+                .sum::<u128>();
 
             debug_println!("--- PARTICIPANT {} END ---", participant.id);
 
@@ -233,7 +251,9 @@ impl Protocol {
                 participant.id,
                 components,
                 Resources {
+                    communication: communication,
                     messages: m,
+                    space: space,
                     time: time,
                 },
             ))

@@ -33,7 +33,7 @@ impl std::fmt::Display for Topology {
 fn main() {
     for p in [2, 4, 6, 8] {
         for n in [1, 2, 4, 8, 16, 32, 64, 128, 256] {
-            for l in [2, 3, 4, 5, 6, 7, 8] {
+            for l in [8, 16, 32, 64, 128, 256, 512, 1024, 2048] {
                 run(Parameters {
                     iterations: 5,
                     length: l,
