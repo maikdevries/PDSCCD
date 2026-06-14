@@ -6,6 +6,14 @@ use pcd::private::{
     protocol::{Protocol, Resources},
 };
 
+struct Parameters {
+    iterations: usize,
+    length: usize,
+    nodes: usize,
+    participants: usize,
+    topology: Topology,
+}
+
 enum Topology {
     Chain,
     Full,
@@ -22,23 +30,23 @@ impl std::fmt::Display for Topology {
     }
 }
 
-struct Parameters {
-    iterations: usize,
-    length: usize,
-    nodes: usize,
-    participants: usize,
-    topology: Topology,
+fn main() {
+    for p in [2, 4, 6, 8] {
+        for n in [1, 2, 4, 8, 16, 32, 64, 128, 256] {
+            for l in [2, 3, 4, 5, 6, 7, 8] {
+                run(Parameters {
+                    iterations: 5,
+                    length: l,
+                    nodes: n,
+                    participants: p,
+                    topology: Topology::Chain,
+                });
+            }
+        }
+    }
 }
 
-fn main() {
-    let parameters = Parameters {
-        iterations: 5,
-        length: 4,
-        nodes: 3,
-        participants: 3,
-        topology: Topology::Chain,
-    };
-
+fn run(parameters: Parameters) {
     let participants = match parameters.topology {
         Topology::Chain => generate_chain_graph(&parameters),
         Topology::Full => generate_full_graph(&parameters),
