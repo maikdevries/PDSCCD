@@ -37,7 +37,11 @@ fn main() {
         topology: Topology::Chain,
     };
 
-    let participants = generate_chain_graph(&parameters);
+    let participants = match parameters.topology {
+        Topology::Chain => generate_chain_graph(&parameters),
+        Topology::Full => generate_full_graph(&parameters),
+    };
+
     let mut resources: HashMap<PID, Vec<Resources>> = HashMap::new();
 
     for _ in 0..parameters.iterations {
@@ -63,36 +67,75 @@ fn generate_chain_graph(parameters: &Parameters) -> Vec<Participant> {
         .take(parameters.participants)
         .enumerate()
         .map(|(p, pid)| {
-            let modulus = parameters.participants * parameters.nodes;
+            let n = parameters.participants * parameters.nodes;
 
             // [NOTE]
-            let nodes = ((p * parameters.nodes)..((p + 1) * parameters.nodes)).map(|nid| {
-                Node::new(
-                    nid as NID,
-                    Location::Internal,
-                    [((nid + 1) % modulus) as NID],
-                )
-            });
+            let nodes = ((p * parameters.nodes)..((p + 1) * parameters.nodes))
+                .map(|nid| Node::new(nid as NID, Location::Internal, vec![((nid + 1) % n) as NID]));
 
             // [NOTE]
             let previous = [Node::new(
-                (((p * parameters.nodes - 1) + modulus) % modulus) as NID,
+                (((p * parameters.nodes - 1) + n) % n) as NID,
                 Location::External(ID[(p - 1 + parameters.participants) % parameters.participants]),
-                [(p * parameters.nodes) as NID],
+                vec![(p * parameters.nodes) as NID],
             )]
             .into_iter();
 
             // [NOTE]
             let next = [Node::new(
-                (((p + 1) * parameters.nodes) % modulus) as NID,
+                (((p + 1) * parameters.nodes) % n) as NID,
                 Location::External(ID[(p + 1) % parameters.participants]),
-                [],
+                vec![],
             )]
             .into_iter();
 
             return Participant::new(
                 pid,
                 Graph::new(previous.chain(nodes).chain(next).collect()),
+                crypto.clone(),
+                parameters.length,
+            );
+        })
+        .collect();
+}
+
+fn generate_full_graph(parameters: &Parameters) -> Vec<Participant> {
+    let crypto = Arc::new(Crypto::new());
+
+    return ID
+        .iter()
+        .take(parameters.participants)
+        .enumerate()
+        .map(|(p, pid)| {
+            let n = parameters.participants * parameters.nodes;
+
+            // [NOTE]
+            let nodes = ((p * parameters.nodes)..((p + 1) * parameters.nodes)).map(|nid| {
+                Node::new(
+                    nid as NID,
+                    Location::Internal,
+                    (0..n)
+                        .filter_map(|i| i.ne(&nid).then(|| i as NID))
+                        .collect(),
+                )
+            });
+
+            // [NOTE]
+            let external = (0..n).filter_map(|i| {
+                (!((p * parameters.nodes)..((p + 1) * parameters.nodes)).contains(&i)).then(|| {
+                    Node::new(
+                        i as NID,
+                        Location::External(ID[i / parameters.nodes]),
+                        ((p * parameters.nodes)..((p + 1) * parameters.nodes))
+                            .map(|i| i as NID)
+                            .collect(),
+                    )
+                })
+            });
+
+            return Participant::new(
+                pid,
+                Graph::new(nodes.chain(external).collect()),
                 crypto.clone(),
                 parameters.length,
             );

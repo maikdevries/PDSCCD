@@ -15,10 +15,10 @@ fn success() {
             "A",
             Graph::new(
                 [
-                    Node::new(0, Location::External("C"), [1]),
-                    Node::new(1, Location::Internal, [2]),
-                    Node::new(2, Location::Internal, [3]),
-                    Node::new(3, Location::External("B"), []),
+                    Node::new(0, Location::External("C"), vec![1]),
+                    Node::new(1, Location::Internal, vec![2]),
+                    Node::new(2, Location::Internal, vec![3]),
+                    Node::new(3, Location::External("B"), vec![]),
                 ]
                 .into(),
             ),
@@ -29,10 +29,10 @@ fn success() {
             "B",
             Graph::new(
                 [
-                    Node::new(2, Location::External("A"), [3]),
-                    Node::new(3, Location::Internal, [4]),
-                    Node::new(4, Location::Internal, [5]),
-                    Node::new(5, Location::External("C"), []),
+                    Node::new(2, Location::External("A"), vec![3]),
+                    Node::new(3, Location::Internal, vec![4]),
+                    Node::new(4, Location::Internal, vec![5]),
+                    Node::new(5, Location::External("C"), vec![]),
                 ]
                 .into(),
             ),
@@ -43,10 +43,10 @@ fn success() {
             "C",
             Graph::new(
                 [
-                    Node::new(4, Location::External("B"), [5]),
-                    Node::new(5, Location::Internal, [0]),
-                    Node::new(0, Location::Internal, [1]),
-                    Node::new(1, Location::External("A"), []),
+                    Node::new(4, Location::External("B"), vec![5]),
+                    Node::new(5, Location::Internal, vec![0]),
+                    Node::new(0, Location::Internal, vec![1]),
+                    Node::new(1, Location::External("A"), vec![]),
                 ]
                 .into(),
             ),
@@ -72,8 +72,8 @@ fn no_external_nodes() {
             "A",
             Graph::new(
                 [
-                    Node::new(1, Location::Internal, [2]),
-                    Node::new(2, Location::Internal, []),
+                    Node::new(1, Location::Internal, vec![2]),
+                    Node::new(2, Location::Internal, vec![]),
                 ]
                 .into(),
             ),
@@ -84,8 +84,8 @@ fn no_external_nodes() {
             "B",
             Graph::new(
                 [
-                    Node::new(3, Location::Internal, [4]),
-                    Node::new(4, Location::Internal, []),
+                    Node::new(3, Location::Internal, vec![4]),
+                    Node::new(4, Location::Internal, vec![]),
                 ]
                 .into(),
             ),
@@ -96,8 +96,8 @@ fn no_external_nodes() {
             "C",
             Graph::new(
                 [
-                    Node::new(5, Location::Internal, [0]),
-                    Node::new(0, Location::Internal, []),
+                    Node::new(5, Location::Internal, vec![0]),
+                    Node::new(0, Location::Internal, vec![]),
                 ]
                 .into(),
             ),
@@ -124,9 +124,9 @@ fn no_external_incoming() {
             "A",
             Graph::new(
                 [
-                    Node::new(1, Location::Internal, [2]),
-                    Node::new(2, Location::Internal, [3]),
-                    Node::new(3, Location::External("B"), []),
+                    Node::new(1, Location::Internal, vec![2]),
+                    Node::new(2, Location::Internal, vec![3]),
+                    Node::new(3, Location::External("B"), vec![]),
                 ]
                 .into(),
             ),
@@ -137,9 +137,9 @@ fn no_external_incoming() {
             "B",
             Graph::new(
                 [
-                    Node::new(3, Location::Internal, [4]),
-                    Node::new(4, Location::Internal, [5]),
-                    Node::new(5, Location::External("C"), []),
+                    Node::new(3, Location::Internal, vec![4]),
+                    Node::new(4, Location::Internal, vec![5]),
+                    Node::new(5, Location::External("C"), vec![]),
                 ]
                 .into(),
             ),
@@ -150,9 +150,9 @@ fn no_external_incoming() {
             "C",
             Graph::new(
                 [
-                    Node::new(5, Location::Internal, [0]),
-                    Node::new(0, Location::Internal, [1]),
-                    Node::new(1, Location::External("A"), []),
+                    Node::new(5, Location::Internal, vec![0]),
+                    Node::new(0, Location::Internal, vec![1]),
+                    Node::new(1, Location::External("A"), vec![]),
                 ]
                 .into(),
             ),
@@ -179,9 +179,9 @@ fn no_external_outgoing() {
             "A",
             Graph::new(
                 [
-                    Node::new(0, Location::External("C"), [1]),
-                    Node::new(1, Location::Internal, [2]),
-                    Node::new(2, Location::Internal, []),
+                    Node::new(0, Location::External("C"), vec![1]),
+                    Node::new(1, Location::Internal, vec![2]),
+                    Node::new(2, Location::Internal, vec![]),
                 ]
                 .into(),
             ),
@@ -192,9 +192,9 @@ fn no_external_outgoing() {
             "B",
             Graph::new(
                 [
-                    Node::new(2, Location::External("A"), [3]),
-                    Node::new(3, Location::Internal, [4]),
-                    Node::new(4, Location::Internal, []),
+                    Node::new(2, Location::External("A"), vec![3]),
+                    Node::new(3, Location::Internal, vec![4]),
+                    Node::new(4, Location::Internal, vec![]),
                 ]
                 .into(),
             ),
@@ -205,9 +205,9 @@ fn no_external_outgoing() {
             "C",
             Graph::new(
                 [
-                    Node::new(4, Location::External("B"), [5]),
-                    Node::new(5, Location::Internal, [0]),
-                    Node::new(0, Location::Internal, []),
+                    Node::new(4, Location::External("B"), vec![5]),
+                    Node::new(5, Location::Internal, vec![0]),
+                    Node::new(0, Location::Internal, vec![]),
                 ]
                 .into(),
             ),
@@ -234,10 +234,10 @@ fn component_size_exceeded() {
             "A",
             Graph::new(
                 [
-                    Node::new(0, Location::External("C"), [1]),
-                    Node::new(1, Location::Internal, [2]),
-                    Node::new(2, Location::Internal, [3]),
-                    Node::new(3, Location::External("B"), []),
+                    Node::new(0, Location::External("C"), vec![1]),
+                    Node::new(1, Location::Internal, vec![2]),
+                    Node::new(2, Location::Internal, vec![3]),
+                    Node::new(3, Location::External("B"), vec![]),
                 ]
                 .into(),
             ),
@@ -248,10 +248,10 @@ fn component_size_exceeded() {
             "B",
             Graph::new(
                 [
-                    Node::new(2, Location::External("A"), [3]),
-                    Node::new(3, Location::Internal, [4]),
-                    Node::new(4, Location::Internal, [5]),
-                    Node::new(5, Location::External("C"), []),
+                    Node::new(2, Location::External("A"), vec![3]),
+                    Node::new(3, Location::Internal, vec![4]),
+                    Node::new(4, Location::Internal, vec![5]),
+                    Node::new(5, Location::External("C"), vec![]),
                 ]
                 .into(),
             ),
@@ -262,10 +262,10 @@ fn component_size_exceeded() {
             "C",
             Graph::new(
                 [
-                    Node::new(4, Location::External("B"), [5]),
-                    Node::new(5, Location::Internal, [0]),
-                    Node::new(0, Location::Internal, [1]),
-                    Node::new(1, Location::External("A"), []),
+                    Node::new(4, Location::External("B"), vec![5]),
+                    Node::new(5, Location::Internal, vec![0]),
+                    Node::new(0, Location::Internal, vec![1]),
+                    Node::new(1, Location::External("A"), vec![]),
                 ]
                 .into(),
             ),
@@ -292,10 +292,10 @@ fn participant_specific_component_size() {
             "A",
             Graph::new(
                 [
-                    Node::new(0, Location::External("C"), [1]),
-                    Node::new(1, Location::Internal, [2]),
-                    Node::new(2, Location::Internal, [3]),
-                    Node::new(3, Location::External("B"), []),
+                    Node::new(0, Location::External("C"), vec![1]),
+                    Node::new(1, Location::Internal, vec![2]),
+                    Node::new(2, Location::Internal, vec![3]),
+                    Node::new(3, Location::External("B"), vec![]),
                 ]
                 .into(),
             ),
@@ -306,10 +306,10 @@ fn participant_specific_component_size() {
             "B",
             Graph::new(
                 [
-                    Node::new(2, Location::External("A"), [3]),
-                    Node::new(3, Location::Internal, [4]),
-                    Node::new(4, Location::Internal, [5]),
-                    Node::new(5, Location::External("C"), []),
+                    Node::new(2, Location::External("A"), vec![3]),
+                    Node::new(3, Location::Internal, vec![4]),
+                    Node::new(4, Location::Internal, vec![5]),
+                    Node::new(5, Location::External("C"), vec![]),
                 ]
                 .into(),
             ),
@@ -320,10 +320,10 @@ fn participant_specific_component_size() {
             "C",
             Graph::new(
                 [
-                    Node::new(4, Location::External("B"), [5]),
-                    Node::new(5, Location::Internal, [0]),
-                    Node::new(0, Location::Internal, [1]),
-                    Node::new(1, Location::External("A"), []),
+                    Node::new(4, Location::External("B"), vec![5]),
+                    Node::new(5, Location::Internal, vec![0]),
+                    Node::new(0, Location::Internal, vec![1]),
+                    Node::new(1, Location::External("A"), vec![]),
                 ]
                 .into(),
             ),

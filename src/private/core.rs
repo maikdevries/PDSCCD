@@ -209,11 +209,11 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn new<const N: usize>(id: NID, location: Location, neighbours: [NID; N]) -> Self {
+    pub fn new(id: NID, location: Location, neighbours: Vec<NID>) -> Self {
         Self {
             id: id,
             location: location,
-            neighbours: neighbours.into(),
+            neighbours: neighbours,
         }
     }
 }
