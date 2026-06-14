@@ -6,11 +6,26 @@ use pcd::private::{
     protocol::{Protocol, Resources},
 };
 
+enum Topology {
+    Chain,
+    Full,
+}
+
+impl std::fmt::Display for Topology {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Topology::Chain => write!(f, "C"),
+            Topology::Full => write!(f, "F"),
+        }
+    }
+}
+
 struct Parameters {
     iterations: usize,
     length: usize,
     nodes: usize,
     participants: usize,
+    topology: Topology,
 }
 
 fn main() {
@@ -19,6 +34,7 @@ fn main() {
         length: 4,
         nodes: 3,
         participants: 3,
+        topology: Topology::Chain,
     };
 
     let participants = generate_chain_graph(&parameters);
@@ -89,8 +105,8 @@ fn write_to_file(
     parameters: Parameters,
 ) -> std::io::Result<()> {
     let filename = format!(
-        "{}P{}N{}L.json",
-        parameters.participants, parameters.nodes, parameters.length
+        "{}P{}N{}L{}.json",
+        parameters.topology, parameters.participants, parameters.nodes, parameters.length
     );
 
     let file = File::create_new(Path::new("./benchmarks").join(filename))?;
