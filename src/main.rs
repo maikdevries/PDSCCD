@@ -9,6 +9,7 @@ use pcd::private::{
 enum Topology {
     Chain,
     Full,
+    Hybrid,
 }
 
 impl std::fmt::Display for Topology {
@@ -16,6 +17,7 @@ impl std::fmt::Display for Topology {
         match self {
             Topology::Chain => write!(f, "C"),
             Topology::Full => write!(f, "F"),
+            Topology::Hybrid => write!(f, "H"),
         }
     }
 }
@@ -40,6 +42,7 @@ fn main() {
     let participants = match parameters.topology {
         Topology::Chain => generate_chain_graph(&parameters),
         Topology::Full => generate_full_graph(&parameters),
+        Topology::Hybrid => generate_hybrid_graph(&parameters),
     };
 
     let mut resources: HashMap<PID, Vec<Resources>> = HashMap::new();
@@ -136,6 +139,73 @@ fn generate_full_graph(parameters: &Parameters) -> Vec<Participant> {
             return Participant::new(
                 pid,
                 Graph::new(nodes.chain(external).collect()),
+                crypto.clone(),
+                parameters.length,
+            );
+        })
+        .collect();
+}
+
+fn generate_hybrid_graph(parameters: &Parameters) -> Vec<Participant> {
+    let crypto = Arc::new(Crypto::new());
+
+    return ID
+        .iter()
+        .take(parameters.participants)
+        .enumerate()
+        .map(|(p, pid)| {
+            let n = parameters.participants * parameters.nodes;
+
+            // [NOTE]
+            let nodes = ((p * parameters.nodes)..((p + 1) * parameters.nodes) - 1).map(|nid| {
+                Node::new(
+                    nid as NID,
+                    Location::Internal,
+                    ((p * parameters.nodes)..((p + 1) * parameters.nodes))
+                        .filter_map(|i| i.ne(&nid).then(|| i as NID))
+                        .collect(),
+                )
+            });
+
+            // [NOTE]
+            let last = [Node::new(
+                ((p + 1) * parameters.nodes - 1) as NID,
+                Location::Internal,
+                ((p * parameters.nodes)..((p + 1) * parameters.nodes) - 1)
+                    .chain(
+                        (0..n)
+                            .step_by(parameters.nodes)
+                            .filter(|i| *i != (p * parameters.nodes)),
+                    )
+                    .map(|i| i as NID)
+                    .collect(),
+            )]
+            .into_iter();
+
+            // [NOTE]
+            let external = (0..n)
+                .step_by(parameters.nodes)
+                .filter_map(|i| {
+                    i.ne(&(p * parameters.nodes)).then(|| {
+                        [
+                            Node::new(
+                                i as NID,
+                                Location::External(ID[i / parameters.nodes]),
+                                vec![],
+                            ),
+                            Node::new(
+                                ((i + parameters.nodes - 1) % n) as NID,
+                                Location::External(ID[i / parameters.nodes]),
+                                vec![(p * parameters.nodes) as NID],
+                            ),
+                        ]
+                    })
+                })
+                .flatten();
+
+            return Participant::new(
+                pid,
+                Graph::new(nodes.chain(last).chain(external).collect()),
                 crypto.clone(),
                 parameters.length,
             );
