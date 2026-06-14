@@ -10,37 +10,46 @@ use pcd::private::{
 fn success() {
     let crypto = Arc::new(Crypto::new());
 
-    let participants = [
+    let participants = vec![
         Participant::new(
             "A",
-            Graph::new([
-                Node::new(0, Location::External("C"), [1]),
-                Node::new(1, Location::Internal, [2]),
-                Node::new(2, Location::Internal, [3]),
-                Node::new(3, Location::External("B"), []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(0, Location::External("C"), [1]),
+                    Node::new(1, Location::Internal, [2]),
+                    Node::new(2, Location::Internal, [3]),
+                    Node::new(3, Location::External("B"), []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
         Participant::new(
             "B",
-            Graph::new([
-                Node::new(2, Location::External("A"), [3]),
-                Node::new(3, Location::Internal, [4]),
-                Node::new(4, Location::Internal, [5]),
-                Node::new(5, Location::External("C"), []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(2, Location::External("A"), [3]),
+                    Node::new(3, Location::Internal, [4]),
+                    Node::new(4, Location::Internal, [5]),
+                    Node::new(5, Location::External("C"), []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
         Participant::new(
             "C",
-            Graph::new([
-                Node::new(4, Location::External("B"), [5]),
-                Node::new(5, Location::Internal, [0]),
-                Node::new(0, Location::Internal, [1]),
-                Node::new(1, Location::External("A"), []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(4, Location::External("B"), [5]),
+                    Node::new(5, Location::Internal, [0]),
+                    Node::new(0, Location::Internal, [1]),
+                    Node::new(1, Location::External("A"), []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
@@ -58,31 +67,40 @@ fn success() {
 fn no_external_nodes() {
     let crypto = Arc::new(Crypto::new());
 
-    let participants = [
+    let participants = vec![
         Participant::new(
             "A",
-            Graph::new([
-                Node::new(1, Location::Internal, [2]),
-                Node::new(2, Location::Internal, []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(1, Location::Internal, [2]),
+                    Node::new(2, Location::Internal, []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
         Participant::new(
             "B",
-            Graph::new([
-                Node::new(3, Location::Internal, [4]),
-                Node::new(4, Location::Internal, []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(3, Location::Internal, [4]),
+                    Node::new(4, Location::Internal, []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
         Participant::new(
             "C",
-            Graph::new([
-                Node::new(5, Location::Internal, [0]),
-                Node::new(0, Location::Internal, []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(5, Location::Internal, [0]),
+                    Node::new(0, Location::Internal, []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
@@ -101,34 +119,43 @@ fn no_external_nodes() {
 fn no_external_incoming() {
     let crypto = Arc::new(Crypto::new());
 
-    let participants = [
+    let participants = vec![
         Participant::new(
             "A",
-            Graph::new([
-                Node::new(1, Location::Internal, [2]),
-                Node::new(2, Location::Internal, [3]),
-                Node::new(3, Location::External("B"), []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(1, Location::Internal, [2]),
+                    Node::new(2, Location::Internal, [3]),
+                    Node::new(3, Location::External("B"), []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
         Participant::new(
             "B",
-            Graph::new([
-                Node::new(3, Location::Internal, [4]),
-                Node::new(4, Location::Internal, [5]),
-                Node::new(5, Location::External("C"), []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(3, Location::Internal, [4]),
+                    Node::new(4, Location::Internal, [5]),
+                    Node::new(5, Location::External("C"), []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
         Participant::new(
             "C",
-            Graph::new([
-                Node::new(5, Location::Internal, [0]),
-                Node::new(0, Location::Internal, [1]),
-                Node::new(1, Location::External("A"), []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(5, Location::Internal, [0]),
+                    Node::new(0, Location::Internal, [1]),
+                    Node::new(1, Location::External("A"), []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
@@ -147,34 +174,43 @@ fn no_external_incoming() {
 fn no_external_outgoing() {
     let crypto = Arc::new(Crypto::new());
 
-    let participants = [
+    let participants = vec![
         Participant::new(
             "A",
-            Graph::new([
-                Node::new(0, Location::External("C"), [1]),
-                Node::new(1, Location::Internal, [2]),
-                Node::new(2, Location::Internal, []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(0, Location::External("C"), [1]),
+                    Node::new(1, Location::Internal, [2]),
+                    Node::new(2, Location::Internal, []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
         Participant::new(
             "B",
-            Graph::new([
-                Node::new(2, Location::External("A"), [3]),
-                Node::new(3, Location::Internal, [4]),
-                Node::new(4, Location::Internal, []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(2, Location::External("A"), [3]),
+                    Node::new(3, Location::Internal, [4]),
+                    Node::new(4, Location::Internal, []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
         Participant::new(
             "C",
-            Graph::new([
-                Node::new(4, Location::External("B"), [5]),
-                Node::new(5, Location::Internal, [0]),
-                Node::new(0, Location::Internal, []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(4, Location::External("B"), [5]),
+                    Node::new(5, Location::Internal, [0]),
+                    Node::new(0, Location::Internal, []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
@@ -193,37 +229,46 @@ fn no_external_outgoing() {
 fn component_size_exceeded() {
     let crypto = Arc::new(Crypto::new());
 
-    let participants = [
+    let participants = vec![
         Participant::new(
             "A",
-            Graph::new([
-                Node::new(0, Location::External("C"), [1]),
-                Node::new(1, Location::Internal, [2]),
-                Node::new(2, Location::Internal, [3]),
-                Node::new(3, Location::External("B"), []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(0, Location::External("C"), [1]),
+                    Node::new(1, Location::Internal, [2]),
+                    Node::new(2, Location::Internal, [3]),
+                    Node::new(3, Location::External("B"), []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             5,
         ),
         Participant::new(
             "B",
-            Graph::new([
-                Node::new(2, Location::External("A"), [3]),
-                Node::new(3, Location::Internal, [4]),
-                Node::new(4, Location::Internal, [5]),
-                Node::new(5, Location::External("C"), []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(2, Location::External("A"), [3]),
+                    Node::new(3, Location::Internal, [4]),
+                    Node::new(4, Location::Internal, [5]),
+                    Node::new(5, Location::External("C"), []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             5,
         ),
         Participant::new(
             "C",
-            Graph::new([
-                Node::new(4, Location::External("B"), [5]),
-                Node::new(5, Location::Internal, [0]),
-                Node::new(0, Location::Internal, [1]),
-                Node::new(1, Location::External("A"), []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(4, Location::External("B"), [5]),
+                    Node::new(5, Location::Internal, [0]),
+                    Node::new(0, Location::Internal, [1]),
+                    Node::new(1, Location::External("A"), []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             5,
         ),
@@ -242,37 +287,46 @@ fn component_size_exceeded() {
 fn participant_specific_component_size() {
     let crypto = Arc::new(Crypto::new());
 
-    let participants = [
+    let participants = vec![
         Participant::new(
             "A",
-            Graph::new([
-                Node::new(0, Location::External("C"), [1]),
-                Node::new(1, Location::Internal, [2]),
-                Node::new(2, Location::Internal, [3]),
-                Node::new(3, Location::External("B"), []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(0, Location::External("C"), [1]),
+                    Node::new(1, Location::Internal, [2]),
+                    Node::new(2, Location::Internal, [3]),
+                    Node::new(3, Location::External("B"), []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             5,
         ),
         Participant::new(
             "B",
-            Graph::new([
-                Node::new(2, Location::External("A"), [3]),
-                Node::new(3, Location::Internal, [4]),
-                Node::new(4, Location::Internal, [5]),
-                Node::new(5, Location::External("C"), []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(2, Location::External("A"), [3]),
+                    Node::new(3, Location::Internal, [4]),
+                    Node::new(4, Location::Internal, [5]),
+                    Node::new(5, Location::External("C"), []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             6,
         ),
         Participant::new(
             "C",
-            Graph::new([
-                Node::new(4, Location::External("B"), [5]),
-                Node::new(5, Location::Internal, [0]),
-                Node::new(0, Location::Internal, [1]),
-                Node::new(1, Location::External("A"), []),
-            ]),
+            Graph::new(
+                [
+                    Node::new(4, Location::External("B"), [5]),
+                    Node::new(5, Location::Internal, [0]),
+                    Node::new(0, Location::Internal, [1]),
+                    Node::new(1, Location::External("A"), []),
+                ]
+                .into(),
+            ),
             crypto.clone(),
             7,
         ),

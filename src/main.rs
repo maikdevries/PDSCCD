@@ -1,13 +1,12 @@
-use std::{collections::HashMap, fs::File, io::BufWriter, path::Path, sync::Arc, time::Duration};
+use std::{collections::HashMap, fs::File, io::BufWriter, path::Path, sync::Arc};
 
 use pcd::private::{
-    core::{Graph, Location, Node, PID, Participant},
+    core::{Graph, Location, NID, Node, PID, Participant},
     crypto::Crypto,
     protocol::{Protocol, Resources},
 };
 
 struct Parameters {
-    edges: usize,
     iterations: usize,
     length: usize,
     nodes: usize,
@@ -15,138 +14,14 @@ struct Parameters {
 }
 
 fn main() {
-    let crypto = Arc::new(Crypto::new());
     let parameters = Parameters {
-        edges: 8,
         iterations: 5,
         length: 4,
-        nodes: 1,
-        participants: 8,
+        nodes: 3,
+        participants: 3,
     };
 
-    let participants = [
-        Participant::new(
-            "A",
-            Graph::new([
-                Node::new(1, Location::Internal, [2, 3, 4, 5, 6, 7, 8]),
-                Node::new(2, Location::External("B"), [1]),
-                Node::new(3, Location::External("C"), [1]),
-                Node::new(4, Location::External("D"), [1]),
-                Node::new(5, Location::External("E"), [1]),
-                Node::new(6, Location::External("F"), [1]),
-                Node::new(7, Location::External("G"), [1]),
-                Node::new(8, Location::External("H"), [1]),
-            ]),
-            crypto.clone(),
-            parameters.length,
-        ),
-        Participant::new(
-            "B",
-            Graph::new([
-                Node::new(1, Location::External("A"), [2]),
-                Node::new(2, Location::Internal, [1, 3, 4, 5, 6, 7, 8]),
-                Node::new(3, Location::External("C"), [2]),
-                Node::new(4, Location::External("D"), [2]),
-                Node::new(5, Location::External("E"), [2]),
-                Node::new(6, Location::External("F"), [2]),
-                Node::new(7, Location::External("G"), [2]),
-                Node::new(8, Location::External("H"), [2]),
-            ]),
-            crypto.clone(),
-            parameters.length,
-        ),
-        Participant::new(
-            "C",
-            Graph::new([
-                Node::new(1, Location::External("A"), [3]),
-                Node::new(2, Location::External("B"), [3]),
-                Node::new(3, Location::Internal, [1, 2, 4, 5, 6, 7, 8]),
-                Node::new(4, Location::External("D"), [3]),
-                Node::new(5, Location::External("E"), [3]),
-                Node::new(6, Location::External("F"), [3]),
-                Node::new(7, Location::External("G"), [3]),
-                Node::new(8, Location::External("H"), [3]),
-            ]),
-            crypto.clone(),
-            parameters.length,
-        ),
-        Participant::new(
-            "D",
-            Graph::new([
-                Node::new(1, Location::External("A"), [4]),
-                Node::new(2, Location::External("B"), [4]),
-                Node::new(3, Location::External("C"), [4]),
-                Node::new(4, Location::Internal, [1, 2, 3, 5, 6, 7, 8]),
-                Node::new(5, Location::External("E"), [4]),
-                Node::new(6, Location::External("F"), [4]),
-                Node::new(7, Location::External("G"), [4]),
-                Node::new(8, Location::External("H"), [4]),
-            ]),
-            crypto.clone(),
-            parameters.length,
-        ),
-        Participant::new(
-            "E",
-            Graph::new([
-                Node::new(1, Location::External("A"), [5]),
-                Node::new(2, Location::External("B"), [5]),
-                Node::new(3, Location::External("C"), [5]),
-                Node::new(4, Location::External("D"), [5]),
-                Node::new(5, Location::Internal, [1, 2, 3, 4, 6, 7, 8]),
-                Node::new(6, Location::External("F"), [5]),
-                Node::new(7, Location::External("G"), [5]),
-                Node::new(8, Location::External("H"), [5]),
-            ]),
-            crypto.clone(),
-            parameters.length,
-        ),
-        Participant::new(
-            "F",
-            Graph::new([
-                Node::new(1, Location::External("A"), [6]),
-                Node::new(2, Location::External("B"), [6]),
-                Node::new(3, Location::External("C"), [6]),
-                Node::new(4, Location::External("D"), [6]),
-                Node::new(5, Location::External("E"), [6]),
-                Node::new(6, Location::Internal, [1, 2, 3, 4, 5, 7, 8]),
-                Node::new(7, Location::External("G"), [6]),
-                Node::new(8, Location::External("H"), [6]),
-            ]),
-            crypto.clone(),
-            parameters.length,
-        ),
-        Participant::new(
-            "G",
-            Graph::new([
-                Node::new(1, Location::External("A"), [7]),
-                Node::new(2, Location::External("B"), [7]),
-                Node::new(3, Location::External("C"), [7]),
-                Node::new(4, Location::External("D"), [7]),
-                Node::new(5, Location::External("E"), [7]),
-                Node::new(6, Location::External("F"), [7]),
-                Node::new(7, Location::Internal, [1, 2, 3, 4, 5, 6, 8]),
-                Node::new(8, Location::External("H"), [7]),
-            ]),
-            crypto.clone(),
-            parameters.length,
-        ),
-        Participant::new(
-            "H",
-            Graph::new([
-                Node::new(1, Location::External("A"), [8]),
-                Node::new(2, Location::External("B"), [8]),
-                Node::new(3, Location::External("C"), [8]),
-                Node::new(4, Location::External("D"), [8]),
-                Node::new(5, Location::External("E"), [8]),
-                Node::new(6, Location::External("F"), [8]),
-                Node::new(7, Location::External("G"), [8]),
-                Node::new(8, Location::Internal, [1, 2, 3, 4, 5, 6, 7]),
-            ]),
-            crypto.clone(),
-            parameters.length,
-        ),
-    ];
-
+    let participants = generate_chain_graph(&parameters);
     let mut resources: HashMap<PID, Vec<Resources>> = HashMap::new();
 
     for _ in 0..parameters.iterations {
@@ -158,8 +33,55 @@ fn main() {
 
     if let Err(_) = write_to_file(resources, parameters) {
         eprintln!();
-        eprintln!("TIMINGS HAVE NOT BEEN WRITTEN TO DISK!");
+        eprintln!("WARNING: RESOURCE DETAILS HAVE NOT BEEN WRITTEN TO DISK!");
     };
+}
+
+const ID: [&str; 8] = ["A", "B", "C", "D", "E", "F", "G", "H"];
+
+fn generate_chain_graph(parameters: &Parameters) -> Vec<Participant> {
+    let crypto = Arc::new(Crypto::new());
+
+    return ID
+        .iter()
+        .take(parameters.participants)
+        .enumerate()
+        .map(|(p, pid)| {
+            let modulus = parameters.participants * parameters.nodes;
+
+            // [NOTE]
+            let nodes = ((p * parameters.nodes)..((p + 1) * parameters.nodes)).map(|nid| {
+                Node::new(
+                    nid as NID,
+                    Location::Internal,
+                    [((nid + 1) % modulus) as NID],
+                )
+            });
+
+            // [NOTE]
+            let previous = [Node::new(
+                (((p * parameters.nodes - 1) + modulus) % modulus) as NID,
+                Location::External(ID[(p - 1 + parameters.participants) % parameters.participants]),
+                [(p * parameters.nodes) as NID],
+            )]
+            .into_iter();
+
+            // [NOTE]
+            let next = [Node::new(
+                (((p + 1) * parameters.nodes) % modulus) as NID,
+                Location::External(ID[(p + 1) % parameters.participants]),
+                [],
+            )]
+            .into_iter();
+
+            return Participant::new(
+                pid,
+                Graph::new(previous.chain(nodes).chain(next).collect()),
+                crypto.clone(),
+                parameters.length,
+            );
+        })
+        .collect();
 }
 
 fn write_to_file(
@@ -167,9 +89,10 @@ fn write_to_file(
     parameters: Parameters,
 ) -> std::io::Result<()> {
     let filename = format!(
-        "{}P{}N{}E{}L.json",
-        parameters.participants, parameters.nodes, parameters.edges, parameters.length
+        "{}P{}N{}L.json",
+        parameters.participants, parameters.nodes, parameters.length
     );
+
     let file = File::create_new(Path::new("./benchmarks").join(filename))?;
     let writer = BufWriter::new(file);
 

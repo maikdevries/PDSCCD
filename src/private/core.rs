@@ -194,7 +194,7 @@ pub struct Graph {
 }
 
 impl Graph {
-    pub fn new<const N: usize>(nodes: [Node; N]) -> Self {
+    pub fn new(nodes: Vec<Node>) -> Self {
         Self {
             nodes: nodes.into_iter().map(|n| (n.id, n)).collect(),
         }

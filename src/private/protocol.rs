@@ -2,7 +2,7 @@ use std::{
     collections::{HashMap, HashSet},
     sync::mpsc::{self, Receiver, Sender},
     thread,
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use crate::private::{
@@ -38,7 +38,7 @@ pub struct Protocol {
 }
 
 impl Protocol {
-    pub fn new<const N: usize>(participants: [Participant; N]) -> Self {
+    pub fn new(participants: Vec<Participant>) -> Self {
         Self {
             participants: participants.into_iter().map(|p| (p.id, p)).collect(),
         }
