@@ -1,6 +1,8 @@
 use curve25519_dalek::{RistrettoPoint, Scalar, constants::RISTRETTO_BASEPOINT_POINT as G};
 use std::collections::HashMap;
 
+use crate::private::core::NID;
+
 // ---
 
 impl std::fmt::Debug for Ciphertext {
@@ -41,14 +43,14 @@ pub struct Unsealed {
 }
 
 pub struct Elliptic {
-    lookup: HashMap<[u8; 32], u32>,
+    lookup: HashMap<[u8; 32], NID>,
     public: RistrettoPoint,
     secret: Scalar,
 }
 
 impl Elliptic {
     // [NOTE]
-    const B: u32 = u32::MAX.isqrt() + 1;
+    const B: NID = NID::MAX.isqrt() + 1;
 
     pub fn new() -> Self {
         let secret = Scalar::random(&mut rand::rng());
@@ -60,7 +62,7 @@ impl Elliptic {
         }
     }
 
-    fn generate_lookup() -> HashMap<[u8; 32], u32> {
+    fn generate_lookup() -> HashMap<[u8; 32], NID> {
         let mut lookup = HashMap::with_capacity(Self::B as usize);
         let mut baby = RistrettoPoint::default();
 
@@ -120,7 +122,7 @@ impl Elliptic {
         return (unsealed, blind);
     }
 
-    pub fn recover(&self, point: &Plaintext) -> Option<u32> {
+    pub fn recover(&self, point: &Plaintext) -> Option<NID> {
         let mut giant = *point;
 
         // [NOTE]
