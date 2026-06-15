@@ -6,7 +6,7 @@ use std::{
 
 use crate::private::{
     crypto::{Ciphertext, Crypto, Sealed},
-    tarjan::{Component, Path, Tarjan},
+    tarjan::{Component, Tarjan},
 };
 
 #[derive(Clone)]
@@ -15,7 +15,7 @@ pub struct Participant {
     crypto: Arc<Crypto>,
     pub graph: Graph,
     pub id: PID,
-    paths: HashMap<NID, Vec<Path>>,
+    paths: HashMap<NID, HashMap<NID, HashMap<NID, Component>>>,
     tokens: HashMap<NID, Scalar>,
 }
 
@@ -39,12 +39,25 @@ impl Participant {
     }
 
     pub fn detect(&mut self, targets: &HashSet<NID>) -> (Vec<Component>, u128) {
+        if targets.is_empty() {
+            return (Vec::new(), 0);
+        }
+
         let (components, paths) = Tarjan::new(&self.graph).detect(targets);
         let space = std::mem::size_of_val(&paths) as u128;
 
         // [NOTE]
         for (k, v) in paths {
-            self.paths.entry(k).or_default().extend(v);
+            for p in v {
+                self.paths
+                    .entry(k)
+                    .or_default()
+                    .entry(p.exit)
+                    .or_default()
+                    .entry(p.target)
+                    .or_default()
+                    .extend(p.nodes);
+            }
         }
 
         return (components, space);
@@ -81,28 +94,30 @@ impl Participant {
             .into_iter()
             .fold(HashMap::new(), |mut map, message| {
                 // [NOTE]
-                for path in self.paths.get(&message.target).into_iter().flatten() {
-                    // [NOTE]
-                    if path.target != message.source
-                        && let Some(capacity) = message.capacity.checked_sub(path.nodes.len())
-                        && let Location::External(participant) =
-                            self.graph.nodes[&path.target].location
-                    {
+                for (&exit, targets) in self.paths.get(&message.target).into_iter().flatten() {
+                    for (&target, nodes) in targets {
                         // [NOTE]
-                        let token = self.crypto.rerandomise(&message.token);
+                        if target != message.source
+                            && let Some(capacity) = message.capacity.checked_sub(nodes.len())
+                            && let Location::External(participant) =
+                                self.graph.nodes[&target].location
+                        {
+                            // [NOTE]
+                            let token = self.crypto.rerandomise(&message.token);
 
-                        map.entry(participant).or_default().push(Message {
-                            capacity: capacity,
-                            nodes: message
-                                .nodes
-                                .iter()
-                                .map(|c| self.crypto.rerandomise(c))
-                                .chain(path.nodes.iter().map(|n| token * Scalar::from(*n)))
-                                .collect(),
-                            source: path.exit,
-                            target: path.target,
-                            token: token,
-                        });
+                            map.entry(participant).or_default().push(Message {
+                                capacity: capacity,
+                                nodes: message
+                                    .nodes
+                                    .iter()
+                                    .map(|c| self.crypto.rerandomise(c))
+                                    .chain(nodes.iter().map(|n| token * Scalar::from(*n)))
+                                    .collect(),
+                                source: exit,
+                                target: target,
+                                token: token,
+                            });
+                        }
                     }
                 }
 
