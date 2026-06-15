@@ -44,11 +44,16 @@ impl Participant {
         }
 
         let (components, paths) = Tarjan::new(&self.graph).detect(targets);
-        let space = std::mem::size_of_val(&paths) as u128;
+        let mut space = 0;
 
         // [NOTE]
         for (k, v) in paths {
             for p in v {
+                space += (std::mem::size_of_val(&p.exit)
+                    + std::mem::size_of_val(&p.target)
+                    + (p.nodes.len() * std::mem::size_of::<NID>()))
+                    as u128;
+
                 self.paths
                     .entry(k)
                     .or_default()
@@ -152,7 +157,7 @@ impl Participant {
 
             // [NOTE]
             let mut cache = HashMap::with_capacity(queries.len());
-            let seals = queries
+            let seals: Vec<Sealed> = queries
                 .into_iter()
                 .map(|message| {
                     let seal = Sealed {
@@ -171,9 +176,9 @@ impl Participant {
             let token = self.tokens.get(&node).unwrap();
             let blind = Crypto::encode(*token) * beta;
 
-            communication +=
-                (std::mem::size_of_val(&seals) + std::mem::size_of_val(&blind)) as u128;
-            space += (std::mem::size_of_val(&seals) + std::mem::size_of_val(&blind)) as u128;
+            let size = (std::mem::size_of_val(&seals[..]) + std::mem::size_of_val(&blind)) as u128;
+            communication += size;
+            space += size;
 
             // [NOTE]
             let (unsealed, blind) = self.crypto.unseal(seals, blind);
@@ -186,9 +191,9 @@ impl Participant {
                 if unseal.token * beta == blind {
                     let gamma = Scalar::random(&mut rand::rng());
 
-                    communication += std::mem::size_of_val(&message.nodes) as u128;
-                    space += (std::mem::size_of_val(&gamma) + std::mem::size_of_val(&message.nodes))
-                        as u128;
+                    let size = std::mem::size_of_val(&message.nodes[..]) as u128;
+                    communication += size;
+                    space += size + std::mem::size_of_val(&gamma) as u128;
 
                     // [NOTE]
                     let component: Component = message
@@ -205,7 +210,7 @@ impl Participant {
                         })
                         .collect();
 
-                    space += std::mem::size_of_val(&component) as u128;
+                    space += (component.len() * std::mem::size_of::<NID>()) as u128;
                     components.entry(node).or_default().extend(component);
                 } else {
                     incomplete.push(message);

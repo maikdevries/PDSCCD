@@ -169,16 +169,18 @@ impl Protocol {
         }
 
         // [NOTE]
-        let mut m = 0;
-        let t = Instant::now();
+        let mut total_messages = 0;
+        let mut total_time = 0;
 
         // [NOTE]
         for queries in receiver {
             debug_println!();
             debug_println!("--- PARTICIPANT {} START ---", participant.id);
 
-            m += queries.len();
-            *space.entry("receive").or_default() += std::mem::size_of_val(&queries) as u128;
+            let t = Instant::now();
+
+            total_messages += queries.len();
+            *space.entry("receive").or_default() += std::mem::size_of_val(&queries[..]) as u128;
 
             // [NOTE]
             let (known, unknown) = time!("receive", participant.receive(queries));
@@ -219,12 +221,16 @@ impl Protocol {
                 )
             );
             debug_println!("[{}] - Queries: {queries:?}", participant.id);
-            *communication.entry("forward").or_default() += queries
+
+            let qs = queries
                 .values()
                 .flatten()
                 .map(|m| std::mem::size_of_val(m) as u128)
                 .sum::<u128>();
+            *communication.entry("forward").or_default() += qs;
+            *space.entry("forward").or_default() += qs;
 
+            total_time += t.elapsed().as_nanos();
             debug_println!("--- PARTICIPANT {} END ---", participant.id);
 
             // [NOTE]
@@ -236,14 +242,13 @@ impl Protocol {
             sender.send(queries).unwrap();
         }
 
-        let t = t.elapsed();
-        time.insert("total", t.as_nanos());
+        time.insert("total", total_time);
 
         debug_println!(
             "Participant {} detected {} components in {:?}",
             participant.id,
             components.len(),
-            t
+            total_time
         );
 
         results
@@ -252,7 +257,7 @@ impl Protocol {
                 components,
                 Resources {
                     communication: communication,
-                    messages: m,
+                    messages: total_messages,
                     space: space,
                     time: time,
                 },
