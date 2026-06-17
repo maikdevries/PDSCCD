@@ -1,0 +1,450 @@
+{
+  "D": [
+    {
+      "communication": {
+        "forward": 1440,
+        "decrypt": 41456
+      },
+      "messages": 4,
+      "space": {
+        "register": 32,
+        "decrypt": 42080,
+        "forward": 1440,
+        "receive": 1440,
+        "detect": 136
+      },
+      "time": {
+        "decrypt": 18920196,
+        "total": 32964270,
+        "forward": 13940144,
+        "receive": 1100,
+        "detect": 32440,
+        "register": 67310
+      }
+    },
+    {
+      "communication": {
+        "forward": 1440,
+        "decrypt": 41456
+      },
+      "messages": 4,
+      "space": {
+        "register": 32,
+        "decrypt": 42080,
+        "forward": 1440,
+        "detect": 136,
+        "receive": 1440
+      },
+      "time": {
+        "register": 60860,
+        "receive": 830,
+        "detect": 28670,
+        "decrypt": 19028646,
+        "forward": 13701745,
+        "total": 32823471
+      }
+    },
+    {
+      "communication": {
+        "decrypt": 41456,
+        "forward": 1440
+      },
+      "messages": 4,
+      "space": {
+        "receive": 1440,
+        "detect": 136,
+        "forward": 1440,
+        "decrypt": 42080,
+        "register": 32
+      },
+      "time": {
+        "decrypt": 19002867,
+        "forward": 14560695,
+        "receive": 1150,
+        "register": 61210,
+        "detect": 29070,
+        "total": 33658092
+      }
+    },
+    {
+      "communication": {
+        "forward": 1440,
+        "decrypt": 41456
+      },
+      "messages": 4,
+      "space": {
+        "receive": 1440,
+        "decrypt": 42080,
+        "detect": 136,
+        "forward": 1440,
+        "register": 32
+      },
+      "time": {
+        "total": 33540702,
+        "decrypt": 19553027,
+        "detect": 29610,
+        "receive": 1170,
+        "register": 65140,
+        "forward": 13888805
+      }
+    },
+    {
+      "communication": {
+        "decrypt": 41456,
+        "forward": 1440
+      },
+      "messages": 4,
+      "space": {
+        "register": 32,
+        "decrypt": 42080,
+        "detect": 136,
+        "receive": 1440,
+        "forward": 1440
+      },
+      "time": {
+        "forward": 13893615,
+        "decrypt": 18826517,
+        "total": 32812882,
+        "detect": 27780,
+        "register": 61430,
+        "receive": 940
+      }
+    }
+  ],
+  "A": [
+    {
+      "communication": {
+        "forward": 1440,
+        "decrypt": 42464
+      },
+      "messages": 5,
+      "space": {
+        "decrypt": 43136,
+        "detect": 136,
+        "receive": 1800,
+        "register": 32,
+        "forward": 1440
+      },
+      "time": {
+        "register": 61630,
+        "receive": 1070,
+        "decrypt": 19543647,
+        "total": 32910622,
+        "detect": 28330,
+        "forward": 13273065
+      }
+    },
+    {
+      "communication": {
+        "forward": 1440,
+        "decrypt": 42464
+      },
+      "messages": 5,
+      "space": {
+        "register": 32,
+        "detect": 136,
+        "decrypt": 43136,
+        "receive": 1800,
+        "forward": 1440
+      },
+      "time": {
+        "forward": 13570455,
+        "detect": 32240,
+        "total": 34233352,
+        "decrypt": 20564407,
+        "receive": 1590,
+        "register": 61580
+      }
+    },
+    {
+      "communication": {
+        "decrypt": 42464,
+        "forward": 1440
+      },
+      "messages": 5,
+      "space": {
+        "detect": 136,
+        "receive": 1800,
+        "register": 32,
+        "forward": 1440,
+        "decrypt": 43136
+      },
+      "time": {
+        "total": 35126542,
+        "receive": 1430,
+        "decrypt": 21412037,
+        "register": 71110,
+        "forward": 13606935,
+        "detect": 31650
+      }
+    },
+    {
+      "communication": {
+        "decrypt": 42464,
+        "forward": 1440
+      },
+      "messages": 5,
+      "space": {
+        "forward": 1440,
+        "decrypt": 43136,
+        "detect": 136,
+        "receive": 1800,
+        "register": 32
+      },
+      "time": {
+        "detect": 30350,
+        "decrypt": 20657067,
+        "receive": 1280,
+        "forward": 13564855,
+        "register": 60790,
+        "total": 34317392
+      }
+    },
+    {
+      "communication": {
+        "decrypt": 42464,
+        "forward": 1440
+      },
+      "messages": 5,
+      "space": {
+        "register": 32,
+        "forward": 1440,
+        "detect": 136,
+        "decrypt": 43136,
+        "receive": 1800
+      },
+      "time": {
+        "register": 64130,
+        "total": 32907301,
+        "receive": 1010,
+        "decrypt": 19369867,
+        "detect": 31280,
+        "forward": 13437724
+      }
+    }
+  ],
+  "C": [
+    {
+      "communication": {
+        "decrypt": 41792,
+        "forward": 1440
+      },
+      "messages": 4,
+      "space": {
+        "receive": 1440,
+        "detect": 136,
+        "forward": 1440,
+        "decrypt": 42432,
+        "register": 32
+      },
+      "time": {
+        "total": 34396663,
+        "decrypt": 19703887,
+        "register": 62540,
+        "detect": 28460,
+        "forward": 14597546,
+        "receive": 1200
+      }
+    },
+    {
+      "communication": {
+        "forward": 1440,
+        "decrypt": 41792
+      },
+      "messages": 4,
+      "space": {
+        "forward": 1440,
+        "receive": 1440,
+        "decrypt": 42432,
+        "register": 32,
+        "detect": 136
+      },
+      "time": {
+        "receive": 1230,
+        "detect": 28490,
+        "total": 34249332,
+        "decrypt": 19877587,
+        "register": 62600,
+        "forward": 14276315
+      }
+    },
+    {
+      "communication": {
+        "decrypt": 41792,
+        "forward": 1440
+      },
+      "messages": 4,
+      "space": {
+        "decrypt": 42432,
+        "register": 32,
+        "detect": 136,
+        "forward": 1440,
+        "receive": 1440
+      },
+      "time": {
+        "decrypt": 19081537,
+        "receive": 1490,
+        "detect": 29210,
+        "forward": 13912894,
+        "total": 33091311,
+        "register": 62730
+      }
+    },
+    {
+      "communication": {
+        "decrypt": 41792,
+        "forward": 1440
+      },
+      "messages": 4,
+      "space": {
+        "receive": 1440,
+        "register": 32,
+        "decrypt": 42432,
+        "detect": 136,
+        "forward": 1440
+      },
+      "time": {
+        "receive": 1140,
+        "decrypt": 19058496,
+        "detect": 33171,
+        "register": 66950,
+        "forward": 14537425,
+        "total": 33700222
+      }
+    },
+    {
+      "communication": {
+        "decrypt": 41792,
+        "forward": 1440
+      },
+      "messages": 4,
+      "space": {
+        "detect": 136,
+        "forward": 1440,
+        "decrypt": 42432,
+        "receive": 1440,
+        "register": 32
+      },
+      "time": {
+        "register": 63340,
+        "decrypt": 19291126,
+        "receive": 1040,
+        "forward": 13809225,
+        "total": 33198151,
+        "detect": 30450
+      }
+    }
+  ],
+  "B": [
+    {
+      "communication": {
+        "decrypt": 42128,
+        "forward": 1440
+      },
+      "messages": 4,
+      "space": {
+        "receive": 1440,
+        "forward": 1440,
+        "detect": 136,
+        "decrypt": 42784,
+        "register": 32
+      },
+      "time": {
+        "detect": 29580,
+        "decrypt": 19757267,
+        "receive": 1720,
+        "register": 61420,
+        "total": 33572651,
+        "forward": 13719714
+      }
+    },
+    {
+      "communication": {
+        "decrypt": 42128,
+        "forward": 1440
+      },
+      "messages": 4,
+      "space": {
+        "forward": 1440,
+        "receive": 1440,
+        "detect": 136,
+        "register": 32,
+        "decrypt": 42784
+      },
+      "time": {
+        "register": 71070,
+        "receive": 1420,
+        "forward": 13751535,
+        "decrypt": 20462487,
+        "detect": 31410,
+        "total": 34321362
+      }
+    },
+    {
+      "communication": {
+        "forward": 1440,
+        "decrypt": 42128
+      },
+      "messages": 4,
+      "space": {
+        "register": 32,
+        "receive": 1440,
+        "decrypt": 42784,
+        "forward": 1440,
+        "detect": 136
+      },
+      "time": {
+        "receive": 1470,
+        "detect": 30460,
+        "register": 66610,
+        "forward": 13718965,
+        "total": 33061032,
+        "decrypt": 19240767
+      }
+    },
+    {
+      "communication": {
+        "forward": 1440,
+        "decrypt": 42128
+      },
+      "messages": 4,
+      "space": {
+        "detect": 136,
+        "receive": 1440,
+        "decrypt": 42784,
+        "forward": 1440,
+        "register": 32
+      },
+      "time": {
+        "receive": 1560,
+        "detect": 31690,
+        "register": 67860,
+        "forward": 13623004,
+        "decrypt": 19358047,
+        "total": 33085501
+      }
+    },
+    {
+      "communication": {
+        "decrypt": 42128,
+        "forward": 1440
+      },
+      "messages": 4,
+      "space": {
+        "forward": 1440,
+        "decrypt": 42784,
+        "detect": 136,
+        "receive": 1440,
+        "register": 32
+      },
+      "time": {
+        "forward": 13786795,
+        "total": 33344532,
+        "decrypt": 19465247,
+        "detect": 27350,
+        "receive": 980,
+        "register": 61590
+      }
+    }
+  ]
+}
