@@ -93,12 +93,16 @@ fn generate_chain_graph(parameters: &Parameters) -> Vec<Participant> {
             .into_iter();
 
             // [NOTE]
-            let next = [Node::new(
-                (((p + 1) * parameters.nodes) % n) as NID,
-                Location::External(ID[(p + 1) % parameters.participants]),
-                vec![],
-            )]
-            .into_iter();
+            let next = if parameters.participants > 2 || parameters.nodes > 1 {
+                vec![Node::new(
+                    (((p + 1) * parameters.nodes) % n) as NID,
+                    Location::External(ID[(p + 1) % parameters.participants]),
+                    vec![],
+                )]
+                .into_iter()
+            } else {
+                vec![].into_iter()
+            };
 
             return Participant::new(
                 pid,
@@ -195,18 +199,26 @@ fn generate_hybrid_graph(parameters: &Parameters) -> Vec<Participant> {
                 .step_by(parameters.nodes)
                 .filter_map(|i| {
                     i.ne(&(p * parameters.nodes)).then(|| {
-                        [
-                            Node::new(
-                                i as NID,
-                                Location::External(ID[i / parameters.nodes]),
-                                vec![],
-                            ),
-                            Node::new(
+                        if parameters.nodes > 1 {
+                            vec![
+                                Node::new(
+                                    i as NID,
+                                    Location::External(ID[i / parameters.nodes]),
+                                    vec![],
+                                ),
+                                Node::new(
+                                    ((i + parameters.nodes - 1) % n) as NID,
+                                    Location::External(ID[i / parameters.nodes]),
+                                    vec![(p * parameters.nodes) as NID],
+                                ),
+                            ]
+                        } else {
+                            vec![Node::new(
                                 ((i + parameters.nodes - 1) % n) as NID,
                                 Location::External(ID[i / parameters.nodes]),
                                 vec![(p * parameters.nodes) as NID],
-                            ),
-                        ]
+                            )]
+                        }
                     })
                 })
                 .flatten();
