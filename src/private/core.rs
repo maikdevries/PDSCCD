@@ -31,14 +31,14 @@ impl Participant {
         }
     }
 
-    pub fn receive(&self, messages: Vec<Message>) -> (Vec<Message>, Vec<Message>) {
+    pub fn partition(&self, messages: Vec<Message>) -> (Vec<Message>, Vec<Message>) {
         // [NOTE]
         return messages
             .into_iter()
             .partition(|message| self.tokens.contains_key(&message.target));
     }
 
-    pub fn detect(&mut self, targets: &HashSet<NID>) -> (Vec<Component>, u128) {
+    pub fn compute(&mut self, targets: &HashSet<NID>) -> (Vec<Component>, u128) {
         if targets.is_empty() {
             return (Vec::new(), 0);
         }
@@ -68,7 +68,7 @@ impl Participant {
         return (components, space);
     }
 
-    pub fn register(&mut self, nodes: HashSet<NID>) -> (Vec<Message>, u128) {
+    pub fn compose(&mut self, nodes: HashSet<NID>) -> (Vec<Message>, u128) {
         let mut space: u128 = 0;
 
         // [NOTE]
@@ -127,7 +127,7 @@ impl Participant {
             });
     }
 
-    pub fn decrypt(
+    pub fn recognise(
         &self,
         messages: Vec<Message>,
     ) -> (HashMap<NID, Component>, Vec<Message>, u128, u128) {
