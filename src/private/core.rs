@@ -84,7 +84,6 @@ impl Participant {
                     return Message {
                         capacity: self.capacity,
                         nodes: Vec::new(),
-                        source: node,
                         target: node,
                         token: self.crypto.encrypt(&Crypto::encode(token)),
                     };
@@ -99,11 +98,10 @@ impl Participant {
             .into_iter()
             .fold(HashMap::new(), |mut map, message| {
                 // [NOTE]
-                for (&exit, targets) in self.paths.get(&message.target).into_iter().flatten() {
+                for (_, targets) in self.paths.get(&message.target).into_iter().flatten() {
                     for (&target, nodes) in targets {
                         // [NOTE]
-                        if target != message.source
-                            && let Some(capacity) = message.capacity.checked_sub(nodes.len())
+                        if let Some(capacity) = message.capacity.checked_sub(nodes.len())
                             && let Location::External(participant) =
                                 self.graph.nodes[&target].location
                         {
@@ -118,7 +116,6 @@ impl Participant {
                                     .map(|c| self.crypto.rerandomise(c))
                                     .chain(nodes.iter().map(|n| token * Scalar::from(*n)))
                                     .collect(),
-                                source: exit,
                                 target: target,
                                 token: token,
                             });
@@ -230,7 +227,6 @@ pub type PID = &'static str;
 pub struct Message {
     pub capacity: usize,
     pub nodes: Vec<Ciphertext>,
-    pub source: NID,
     pub target: NID,
     pub token: Ciphertext,
 }
