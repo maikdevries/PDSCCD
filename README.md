@@ -1,9 +1,8 @@
-# Privacy-Preserving Detection of Strongly Connected Components in Distributed Graphs
+# Private Detection of Strongly Connected Components in Distributed Graphs
 
 A Rust prototype implementing a decentralised privacy-preserving protocol for detecting strongly connected components (SCCs) across static distributed partial graphs, as proposed in the master's thesis:
 
-> **Privacy-Preserving Detection of Strongly Connected Components in Distributed Graphs**
-> TU Delft, 2026.
+> **Private Detection of Strongly Connected Components in Distributed Graphs** \
 > https://resolver.tudelft.nl/uuid:5814de06-6a8e-4aa6-9665-35452bcf6156
 
 ## Overview
@@ -29,7 +28,7 @@ If you use this work, please cite the thesis:
 ```bibtex
 @mastersthesis{PDSCCD,
 	author = {Maik de Vries},
-	title  = {Privacy-Preserving Detection of Strongly Connected Components in Distributed Graphs},
+	title  = {Private Detection of Strongly Connected Components in Distributed Graphs},
 	school = {Delft University of Technology},
 	year   = {2026},
 	url    = {https://resolver.tudelft.nl/uuid:5814de06-6a8e-4aa6-9665-35452bcf6156}
