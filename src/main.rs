@@ -2,7 +2,7 @@ use std::{collections::HashMap, fs::File, io::BufWriter, path::Path, sync::Arc};
 
 use pdsccd::private::{
     core::{Graph, Location, NID, Node, PID, Participant},
-    crypto::Crypto,
+    crypto::Elliptic,
     protocol::{Protocol, Resources},
 };
 
@@ -71,7 +71,7 @@ fn run(parameters: Parameters) {
 const ID: [&str; 8] = ["A", "B", "C", "D", "E", "F", "G", "H"];
 
 fn generate_chain_graph(parameters: &Parameters) -> Vec<Participant> {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     return ID
         .iter()
@@ -115,7 +115,7 @@ fn generate_chain_graph(parameters: &Parameters) -> Vec<Participant> {
 }
 
 fn generate_full_graph(parameters: &Parameters) -> Vec<Participant> {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     return ID
         .iter()
@@ -159,7 +159,7 @@ fn generate_full_graph(parameters: &Parameters) -> Vec<Participant> {
 }
 
 fn generate_hybrid_graph(parameters: &Parameters) -> Vec<Participant> {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     return ID
         .iter()

@@ -187,26 +187,26 @@ impl Protocol {
             debug_println!("[{}] - Unknown: {unknown:?}", participant.id);
 
             // [NOTE]
-            let (complete, incomplete, cs, ss) = time!("decrypt", participant.recognise(known));
+            let (complete, incomplete, cs, ss) = time!("recognise", participant.recognise(known));
             debug_println!("[{}] - Complete: {complete:?}", participant.id);
             debug_println!("[{}] - Incomplete: {incomplete:?}", participant.id);
 
-            *communication.entry("decrypt").or_default() += cs;
-            *space.entry("decrypt").or_default() += ss;
+            *communication.entry("recognise").or_default() += cs;
+            *space.entry("recognise").or_default() += ss;
 
             let targets = unknown.iter().map(|message| message.target).collect();
 
             // [NOTE]
-            let (detected, ss) = time!("detect", participant.compute(&targets));
+            let (detected, ss) = time!("compute", participant.compute(&targets));
             debug_println!("[{}] - Detected: {detected:?}", participant.id);
 
-            *space.entry("detect").or_default() += ss;
+            *space.entry("compute").or_default() += ss;
 
             // [NOTE]
-            let (registered, ss) = time!("register", participant.compose(targets));
+            let (registered, ss) = time!("compose", participant.compose(targets));
             debug_println!("[{}] - Registered: {registered:?}", participant.id);
 
-            *space.entry("register").or_default() += ss;
+            *space.entry("compose").or_default() += ss;
 
             // [NOTE]
             let queries = time!(

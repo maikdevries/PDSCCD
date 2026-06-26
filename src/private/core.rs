@@ -5,22 +5,22 @@ use std::{
 };
 
 use crate::private::{
-    crypto::{Ciphertext, Crypto, Sealed},
-    tarjan::{Component, Tarjan},
+    crypto::{Ciphertext, Elliptic, Sealed},
+    tarjan::{Component, Path, Tarjan},
 };
 
 #[derive(Clone)]
 pub struct Participant {
     capacity: usize,
-    crypto: Arc<Crypto>,
+    crypto: Arc<Elliptic>,
     pub graph: Graph,
     pub id: PID,
-    paths: HashMap<NID, HashMap<NID, HashMap<NID, Component>>>,
+    paths: HashMap<NID, Vec<Path>>,
     tokens: HashMap<NID, Scalar>,
 }
 
 impl Participant {
-    pub fn new(id: PID, graph: Graph, crypto: Arc<Crypto>, capacity: usize) -> Self {
+    pub fn new(id: PID, graph: Graph, crypto: Arc<Elliptic>, capacity: usize) -> Self {
         Self {
             capacity: capacity,
             crypto: crypto,
@@ -43,7 +43,7 @@ impl Participant {
             return (Vec::new(), 0);
         }
 
-        let (components, paths) = Tarjan::new(&self.graph).detect(targets);
+        let (components, paths) = Tarjan::new(&self.graph).tarjan(targets);
         let mut space = 0;
 
         // [NOTE]
@@ -54,14 +54,7 @@ impl Participant {
                     + (p.nodes.len() * std::mem::size_of::<NID>()))
                     as u128;
 
-                self.paths
-                    .entry(k)
-                    .or_default()
-                    .entry(p.exit)
-                    .or_default()
-                    .entry(p.target)
-                    .or_default()
-                    .extend(p.nodes);
+                self.paths.entry(k).or_default().push(p);
             }
         }
 
@@ -85,7 +78,7 @@ impl Participant {
                         capacity: self.capacity,
                         nodes: Vec::new(),
                         target: node,
-                        token: self.crypto.encrypt(&Crypto::encode(token)),
+                        token: self.crypto.encrypt(&Elliptic::encode(token)),
                     };
                 })
                 .collect(),
@@ -98,28 +91,26 @@ impl Participant {
             .into_iter()
             .fold(HashMap::new(), |mut map, message| {
                 // [NOTE]
-                for (_, targets) in self.paths.get(&message.target).into_iter().flatten() {
-                    for (&target, nodes) in targets {
+                for path in self.paths.get(&message.target).into_iter().flatten() {
+                    // [NOTE]
+                    if let Some(capacity) = message.capacity.checked_sub(path.nodes.len())
+                        && let Location::External(participant) =
+                            self.graph.nodes[&path.target].location
+                    {
                         // [NOTE]
-                        if let Some(capacity) = message.capacity.checked_sub(nodes.len())
-                            && let Location::External(participant) =
-                                self.graph.nodes[&target].location
-                        {
-                            // [NOTE]
-                            let token = self.crypto.rerandomise(&message.token);
+                        let token = self.crypto.rerandomise(&message.token);
 
-                            map.entry(participant).or_default().push(Message {
-                                capacity: capacity,
-                                nodes: message
-                                    .nodes
-                                    .iter()
-                                    .map(|c| self.crypto.rerandomise(c))
-                                    .chain(nodes.iter().map(|n| token * Scalar::from(*n)))
-                                    .collect(),
-                                target: target,
-                                token: token,
-                            });
-                        }
+                        map.entry(participant).or_default().push(Message {
+                            capacity: capacity,
+                            nodes: message
+                                .nodes
+                                .iter()
+                                .map(|c| self.crypto.rerandomise(c))
+                                .chain(path.nodes.iter().map(|n| token * Scalar::from(*n)))
+                                .collect(),
+                            target: path.target,
+                            token: token,
+                        });
                     }
                 }
 
@@ -171,7 +162,7 @@ impl Participant {
 
             // [NOTE]
             let token = self.tokens.get(&node).unwrap();
-            let blind = Crypto::encode(*token) * beta;
+            let blind = Elliptic::encode(*token) * beta;
 
             let size = (std::mem::size_of_val(&seals[..]) + std::mem::size_of_val(&blind)) as u128;
             communication += size;
@@ -222,7 +213,6 @@ impl Participant {
 pub type NID = u32;
 pub type PID = &'static str;
 
-// [TODO]
 #[derive(Debug)]
 pub struct Message {
     pub capacity: usize,

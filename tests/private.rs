@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use pdsccd::private::{
     core::{Graph, Location, Node, Participant},
-    crypto::Crypto,
+    crypto::Elliptic,
     protocol::Protocol,
 };
 
 #[test]
 fn success() {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     let participants = vec![
         Participant::new(
@@ -65,7 +65,7 @@ fn success() {
 
 #[test]
 fn no_external_nodes() {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     let participants = vec![
         Participant::new(
@@ -117,7 +117,7 @@ fn no_external_nodes() {
 
 #[test]
 fn no_external_incoming() {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     let participants = vec![
         Participant::new(
@@ -172,7 +172,7 @@ fn no_external_incoming() {
 
 #[test]
 fn no_external_outgoing() {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     let participants = vec![
         Participant::new(
@@ -227,7 +227,7 @@ fn no_external_outgoing() {
 
 #[test]
 fn component_size_exceeded() {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     let participants = vec![
         Participant::new(
@@ -285,7 +285,7 @@ fn component_size_exceeded() {
 
 #[test]
 fn participant_specific_component_size() {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     let participants = vec![
         Participant::new(
