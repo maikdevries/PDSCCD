@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use pcd::private::{
+use pdsccd::private::{
     core::{Graph, Location, Node, Participant},
     crypto::Crypto,
     protocol::Protocol,
