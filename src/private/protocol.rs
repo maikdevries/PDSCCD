@@ -136,7 +136,6 @@ impl Protocol {
                 .map(|node| Message {
                     capacity: 0,
                     nodes: Vec::new(),
-                    source: node,
                     target: node,
                     token: Ciphertext::default(),
                 })
