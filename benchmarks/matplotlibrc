@@ -1,0 +1,77 @@
+#### MATPLOTLIBRC FORMAT
+
+## ***************************************************************************
+## * LINES                                                                   *
+## ***************************************************************************
+## https://matplotlib.org/stable/users/explain/configuration.html#lines
+
+lines.linewidth: 2.0			# line width in points
+lines.markeredgewidth: 2.5		# the line width around the marker symbol
+lines.markersize: 8				# marker size, in points
+
+
+## ***************************************************************************
+## * FONT                                                                    *
+## ***************************************************************************
+## https://matplotlib.org/stable/users/explain/configuration.html#font
+
+font.family: monospace
+font.size: 14.0
+
+font.monospace: Menlo, DejaVu Sans Mono, Bitstream Vera Sans Mono, Computer Modern Typewriter, Andale Mono, Nimbus Mono L, Courier New, Courier, Fixed, Terminal, monospace
+
+
+## ***************************************************************************
+## * AXES                                                                    *
+## ***************************************************************************
+## https://matplotlib.org/stable/users/explain/configuration.html#axes
+
+axes.labelsize: 14				# font size of the x and y labels
+axes.labelpad: 8.0				# space between label and axis
+axes.labelweight: bold			# weight of the x and y labels
+
+axes.formatter.limits: -1, 1
+axes.formatter.use_mathtext: True
+
+axes.formatter.min_exponent: 0	# minimum exponent to format in scientific notation
+axes.prop_cycle: cycler(color=['fa5252', '12b886', '228be6', 'a18072', 'be4bdb'])
+
+
+## ***************************************************************************
+## * LEGEND                                                                  *
+## ***************************************************************************
+## https://matplotlib.org/stable/users/explain/configuration.html#legend
+
+legend.framealpha: 0.75			# legend patch transparency
+legend.edgecolor: 0.25			# background patch boundary color
+legend.linewidth: 1.0			# line width of the legend frame, None means inherit from patch.linewidth
+legend.fancybox: False
+legend.markerscale: 0
+legend.fontsize: 12
+
+legend.borderpad: 0.5			# border whitespace
+legend.handlelength: 1.75		# the length of the legend lines
+legend.handletextpad: 0.875		# the space between the legend line and legend text
+
+
+## ***************************************************************************
+## * FIGURE                                                                  *
+## ***************************************************************************
+## https://matplotlib.org/stable/users/explain/configuration.html#figure
+
+figure.figsize: 6, 4			# figure size in inches
+figure.dpi: 300					# figure dots per inch
+
+figure.constrained_layout.use: True
+figure.constrained_layout.hspace: 0.5
+figure.constrained_layout.wspace: 0.5
+
+
+## ***************************************************************************
+## * SAVING FIGURES                                                          *
+## ***************************************************************************
+## https://matplotlib.org/stable/users/explain/configuration.html#saving-figures
+
+savefig.format: svg 			# {png, ps, pdf, svg}
+savefig.bbox: tight 			# {tight, standard}
+savefig.pad_inches: 0.125 		# padding to be used, when bbox is set to 'tight'
