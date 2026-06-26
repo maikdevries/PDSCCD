@@ -2,7 +2,6 @@ use std::{
     collections::{HashMap, HashSet},
     sync::mpsc::{self, Receiver, Sender},
     thread,
-    time::Instant,
 };
 
 use crate::private::{
@@ -27,14 +26,6 @@ macro_rules! debug_println {
 
 // ---
 
-#[derive(serde::Serialize)]
-pub struct Resources {
-    pub communication: HashMap<&'static str, u128>,
-    pub messages: usize,
-    pub space: HashMap<&'static str, u128>,
-    pub time: HashMap<&'static str, u128>,
-}
-
 pub struct Protocol {
     participants: HashMap<PID, Participant>,
 }
@@ -46,13 +37,7 @@ impl Protocol {
         }
     }
 
-    pub fn run(
-        self,
-        initiator: PID,
-    ) -> (
-        HashMap<PID, HashMap<NID, Component>>,
-        HashMap<PID, Resources>,
-    ) {
+    pub fn run(self, initiator: PID) -> HashMap<PID, HashMap<NID, Component>> {
         let participant = self
             .participants
             .get(initiator)
@@ -64,7 +49,6 @@ impl Protocol {
 
         // [NOTE]
         let mut components = HashMap::new();
-        let mut resources = HashMap::new();
 
         // [NOTE]
         thread::scope(|scope| {
@@ -105,16 +89,14 @@ impl Protocol {
             drop(channels);
 
             while pending > 0
-                && let Ok((id, cs, rs)) = r_receiver.recv()
+                && let Ok((id, cs)) = r_receiver.recv()
             {
                 components.insert(id, cs);
-                resources.insert(id, rs);
-
                 pending -= 1;
             }
         });
 
-        return (components, resources);
+        return components;
     }
 
     fn seed(participant: &Participant) -> HashMap<PID, Vec<Message>> {
@@ -148,89 +130,45 @@ impl Protocol {
         mut participant: Participant,
         receiver: Receiver<Vec<Message>>,
         sender: Sender<HashMap<PID, Vec<Message>>>,
-        results: Sender<(PID, HashMap<NID, Component>, Resources)>,
+        results: Sender<(PID, HashMap<NID, Component>)>,
     ) {
         let mut components: HashMap<NID, Component> = HashMap::new();
-
-        let mut communication: HashMap<&str, u128> = HashMap::new();
-        let mut space: HashMap<&str, u128> = HashMap::new();
-        let mut time: HashMap<&str, u128> = HashMap::new();
-
-        // [NOTE]
-        macro_rules! time {
-            ($label:literal, $expr:expr) => {{
-                let t = Instant::now();
-                let result = $expr;
-
-                *time.entry($label).or_default() += t.elapsed().as_nanos();
-                result
-            }};
-        }
-
-        // [NOTE]
-        let mut total_messages = 0;
-        let mut total_time = 0;
+        let time = std::time::Instant::now();
 
         // [NOTE]
         for queries in receiver {
             debug_println!();
             debug_println!("--- PARTICIPANT {} START ---", participant.id);
 
-            let t = Instant::now();
-
-            total_messages += queries.len();
-            *space.entry("receive").or_default() += std::mem::size_of_val(&queries[..]) as u128;
-
             // [NOTE]
-            let (known, unknown) = time!("receive", participant.partition(queries));
+            let (known, unknown) = participant.partition(queries);
             debug_println!("[{}] - Known: {known:?}", participant.id);
             debug_println!("[{}] - Unknown: {unknown:?}", participant.id);
 
             // [NOTE]
-            let (complete, incomplete, cs, ss) = time!("decrypt", participant.recognise(known));
+            let (complete, incomplete) = participant.recognise(known);
             debug_println!("[{}] - Complete: {complete:?}", participant.id);
             debug_println!("[{}] - Incomplete: {incomplete:?}", participant.id);
-
-            *communication.entry("decrypt").or_default() += cs;
-            *space.entry("decrypt").or_default() += ss;
 
             let targets = unknown.iter().map(|message| message.target).collect();
 
             // [NOTE]
-            let (detected, ss) = time!("detect", participant.compute(&targets));
+            let detected = participant.compute(&targets);
             debug_println!("[{}] - Detected: {detected:?}", participant.id);
 
-            *space.entry("detect").or_default() += ss;
-
             // [NOTE]
-            let (registered, ss) = time!("register", participant.compose(targets));
+            let registered = participant.compose(targets);
             debug_println!("[{}] - Registered: {registered:?}", participant.id);
 
-            *space.entry("register").or_default() += ss;
-
             // [NOTE]
-            let queries = time!(
-                "forward",
-                participant.forward(
-                    incomplete
-                        .into_iter()
-                        .chain(unknown)
-                        .chain(registered)
-                        .collect(),
-                )
+            let queries = participant.forward(
+                incomplete
+                    .into_iter()
+                    .chain(unknown)
+                    .chain(registered)
+                    .collect(),
             );
             debug_println!("[{}] - Queries: {queries:?}", participant.id);
-
-            let qs = queries
-                .values()
-                .flatten()
-                .map(|m| std::mem::size_of_val(m) as u128)
-                .sum::<u128>();
-            *communication.entry("forward").or_default() += qs;
-            *space.entry("forward").or_default() += qs;
-
-            total_time += t.elapsed().as_nanos();
-            debug_println!("--- PARTICIPANT {} END ---", participant.id);
 
             // [NOTE]
             for (k, v) in complete {
@@ -239,28 +177,16 @@ impl Protocol {
 
             // [NOTE]
             sender.send(queries).unwrap();
+            debug_println!("--- PARTICIPANT {} END ---", participant.id);
         }
-
-        time.insert("total", total_time);
 
         debug_println!(
             "Participant {} detected {} components in {:?}",
             participant.id,
             components.len(),
-            total_time
+            time.elapsed()
         );
 
-        results
-            .send((
-                participant.id,
-                components,
-                Resources {
-                    communication: communication,
-                    messages: total_messages,
-                    space: space,
-                    time: time,
-                },
-            ))
-            .unwrap();
+        results.send((participant.id, components)).unwrap();
     }
 }

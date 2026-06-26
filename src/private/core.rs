@@ -5,22 +5,22 @@ use std::{
 };
 
 use crate::private::{
-    crypto::{Ciphertext, Crypto, Sealed},
-    tarjan::{Component, Tarjan},
+    crypto::{Ciphertext, Elliptic, Sealed},
+    tarjan::{Component, Path, Tarjan},
 };
 
 #[derive(Clone)]
 pub struct Participant {
     capacity: usize,
-    crypto: Arc<Crypto>,
+    crypto: Arc<Elliptic>,
     pub graph: Graph,
     pub id: PID,
-    paths: HashMap<NID, HashMap<NID, HashMap<NID, Component>>>,
+    paths: HashMap<NID, Vec<Path>>,
     tokens: HashMap<NID, Scalar>,
 }
 
 impl Participant {
-    pub fn new(id: PID, graph: Graph, crypto: Arc<Crypto>, capacity: usize) -> Self {
+    pub fn new(id: PID, graph: Graph, crypto: Arc<Elliptic>, capacity: usize) -> Self {
         Self {
             capacity: capacity,
             crypto: crypto,
@@ -38,59 +38,33 @@ impl Participant {
             .partition(|message| self.tokens.contains_key(&message.target));
     }
 
-    pub fn compute(&mut self, targets: &HashSet<NID>) -> (Vec<Component>, u128) {
-        if targets.is_empty() {
-            return (Vec::new(), 0);
-        }
-
-        let (components, paths) = Tarjan::new(&self.graph).detect(targets);
-        let mut space = 0;
+    pub fn compute(&mut self, targets: &HashSet<NID>) -> Vec<Component> {
+        let (components, paths) = Tarjan::new(&self.graph).tarjan(targets);
 
         // [NOTE]
         for (k, v) in paths {
-            for p in v {
-                space += (std::mem::size_of_val(&p.exit)
-                    + std::mem::size_of_val(&p.target)
-                    + (p.nodes.len() * std::mem::size_of::<NID>()))
-                    as u128;
-
-                self.paths
-                    .entry(k)
-                    .or_default()
-                    .entry(p.exit)
-                    .or_default()
-                    .entry(p.target)
-                    .or_default()
-                    .extend(p.nodes);
-            }
+            self.paths.entry(k).or_default().extend(v);
         }
 
-        return (components, space);
+        return components;
     }
 
-    pub fn compose(&mut self, nodes: HashSet<NID>) -> (Vec<Message>, u128) {
-        let mut space: u128 = 0;
-
+    pub fn compose(&mut self, nodes: HashSet<NID>) -> Vec<Message> {
         // [NOTE]
-        return (
-            nodes
-                .into_iter()
-                .map(|node| {
-                    let token = Scalar::random(&mut rand::rng());
-                    self.tokens.insert(node, token);
+        return nodes
+            .into_iter()
+            .map(|node| {
+                let token = Scalar::random(&mut rand::rng());
+                self.tokens.insert(node, token);
 
-                    space += std::mem::size_of_val(&token) as u128;
-
-                    return Message {
-                        capacity: self.capacity,
-                        nodes: Vec::new(),
-                        target: node,
-                        token: self.crypto.encrypt(&Crypto::encode(token)),
-                    };
-                })
-                .collect(),
-            space,
-        );
+                return Message {
+                    capacity: self.capacity,
+                    nodes: Vec::new(),
+                    target: node,
+                    token: self.crypto.encrypt(&Elliptic::encode(token)),
+                };
+            })
+            .collect();
     }
 
     pub fn forward(&self, messages: Vec<Message>) -> HashMap<PID, Vec<Message>> {
@@ -98,28 +72,25 @@ impl Participant {
             .into_iter()
             .fold(HashMap::new(), |mut map, message| {
                 // [NOTE]
-                for (_, targets) in self.paths.get(&message.target).into_iter().flatten() {
-                    for (&target, nodes) in targets {
+                for path in self.paths.get(&message.target).into_iter().flatten() {
+                    if let Some(capacity) = message.capacity.checked_sub(path.nodes.len())
+                        && let Location::External(participant) =
+                            self.graph.nodes[&path.target].location
+                    {
                         // [NOTE]
-                        if let Some(capacity) = message.capacity.checked_sub(nodes.len())
-                            && let Location::External(participant) =
-                                self.graph.nodes[&target].location
-                        {
-                            // [NOTE]
-                            let token = self.crypto.rerandomise(&message.token);
+                        let token = self.crypto.rerandomise(&message.token);
 
-                            map.entry(participant).or_default().push(Message {
-                                capacity: capacity,
-                                nodes: message
-                                    .nodes
-                                    .iter()
-                                    .map(|c| self.crypto.rerandomise(c))
-                                    .chain(nodes.iter().map(|n| token * Scalar::from(*n)))
-                                    .collect(),
-                                target: target,
-                                token: token,
-                            });
-                        }
+                        map.entry(participant).or_default().push(Message {
+                            capacity: capacity,
+                            nodes: message
+                                .nodes
+                                .iter()
+                                .map(|c| self.crypto.rerandomise(c))
+                                .chain(path.nodes.iter().map(|n| token * Scalar::from(*n)))
+                                .collect(),
+                            target: path.target,
+                            token: token,
+                        });
                     }
                 }
 
@@ -127,10 +98,7 @@ impl Participant {
             });
     }
 
-    pub fn recognise(
-        &self,
-        messages: Vec<Message>,
-    ) -> (HashMap<NID, Component>, Vec<Message>, u128, u128) {
+    pub fn recognise(&self, messages: Vec<Message>) -> (HashMap<NID, Component>, Vec<Message>) {
         // [NOTE]
         let groups: HashMap<NID, Vec<Message>> =
             messages
@@ -143,14 +111,9 @@ impl Participant {
         let mut components: HashMap<NID, Component> = HashMap::new();
         let mut incomplete = Vec::new();
 
-        let mut communication: u128 = 0;
-        let mut space: u128 = 0;
-
         for (node, queries) in groups {
             let alpha = Scalar::random(&mut rand::rng());
             let beta = Scalar::random(&mut rand::rng());
-
-            space += (std::mem::size_of_val(&alpha) + std::mem::size_of_val(&beta)) as u128;
 
             // [NOTE]
             let mut cache = HashMap::with_capacity(queries.len());
@@ -162,8 +125,6 @@ impl Participant {
                         token: message.token * alpha,
                     };
 
-                    space += std::mem::size_of_val(&seal.nonce) as u128;
-
                     cache.insert(seal.nonce, message);
                     return seal;
                 })
@@ -171,11 +132,7 @@ impl Participant {
 
             // [NOTE]
             let token = self.tokens.get(&node).unwrap();
-            let blind = Crypto::encode(*token) * beta;
-
-            let size = (std::mem::size_of_val(&seals[..]) + std::mem::size_of_val(&blind)) as u128;
-            communication += size;
-            space += size;
+            let blind = Elliptic::encode(*token) * beta;
 
             // [NOTE]
             let (unsealed, blind) = self.crypto.unseal(seals, blind);
@@ -187,10 +144,6 @@ impl Participant {
 
                 if unseal.token * beta == blind {
                     let gamma = Scalar::random(&mut rand::rng());
-
-                    let size = std::mem::size_of_val(&message.nodes[..]) as u128;
-                    communication += size;
-                    space += size + std::mem::size_of_val(&gamma) as u128;
 
                     // [NOTE]
                     let component: Component = message
@@ -207,7 +160,6 @@ impl Participant {
                         })
                         .collect();
 
-                    space += (component.len() * std::mem::size_of::<NID>()) as u128;
                     components.entry(node).or_default().extend(component);
                 } else {
                     incomplete.push(message);
@@ -215,14 +167,13 @@ impl Participant {
             }
         }
 
-        return (components, incomplete, communication, space);
+        return (components, incomplete);
     }
 }
 
 pub type NID = u32;
 pub type PID = &'static str;
 
-// [TODO]
 #[derive(Debug)]
 pub struct Message {
     pub capacity: usize,

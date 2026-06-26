@@ -4,8 +4,7 @@ use crate::private::core::{Graph, Location, NID};
 
 pub type Component = HashSet<NID>;
 
-// [TODO]
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Path {
     pub exit: NID,
     pub nodes: Component,

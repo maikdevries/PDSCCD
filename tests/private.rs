@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use pdsccd::private::{
     core::{Graph, Location, Node, Participant},
-    crypto::Crypto,
+    crypto::Elliptic,
     protocol::Protocol,
 };
 
 #[test]
 fn success() {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     let participants = vec![
         Participant::new(
@@ -55,9 +55,9 @@ fn success() {
         ),
     ];
 
-    let (a, _) = Protocol::new(participants.clone()).run("A");
-    let (b, _) = Protocol::new(participants.clone()).run("B");
-    let (c, _) = Protocol::new(participants).run("C");
+    let a = Protocol::new(participants.clone()).run("A");
+    let b = Protocol::new(participants.clone()).run("B");
+    let c = Protocol::new(participants).run("C");
 
     assert_eq!(a, b);
     assert_eq!(b, c);
@@ -65,7 +65,7 @@ fn success() {
 
 #[test]
 fn no_external_nodes() {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     let participants = vec![
         Participant::new(
@@ -106,9 +106,9 @@ fn no_external_nodes() {
         ),
     ];
 
-    let (a, _) = Protocol::new(participants.clone()).run("A");
-    let (b, _) = Protocol::new(participants.clone()).run("B");
-    let (c, _) = Protocol::new(participants).run("C");
+    let a = Protocol::new(participants.clone()).run("A");
+    let b = Protocol::new(participants.clone()).run("B");
+    let c = Protocol::new(participants).run("C");
 
     assert!(a.values().all(|components| components.is_empty()));
     assert!(b.values().all(|components| components.is_empty()));
@@ -117,7 +117,7 @@ fn no_external_nodes() {
 
 #[test]
 fn no_external_incoming() {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     let participants = vec![
         Participant::new(
@@ -161,9 +161,9 @@ fn no_external_incoming() {
         ),
     ];
 
-    let (a, _) = Protocol::new(participants.clone()).run("A");
-    let (b, _) = Protocol::new(participants.clone()).run("B");
-    let (c, _) = Protocol::new(participants).run("C");
+    let a = Protocol::new(participants.clone()).run("A");
+    let b = Protocol::new(participants.clone()).run("B");
+    let c = Protocol::new(participants).run("C");
 
     assert!(a.values().all(|components| components.is_empty()));
     assert!(b.values().all(|components| components.is_empty()));
@@ -172,7 +172,7 @@ fn no_external_incoming() {
 
 #[test]
 fn no_external_outgoing() {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     let participants = vec![
         Participant::new(
@@ -216,9 +216,9 @@ fn no_external_outgoing() {
         ),
     ];
 
-    let (a, _) = Protocol::new(participants.clone()).run("A");
-    let (b, _) = Protocol::new(participants.clone()).run("B");
-    let (c, _) = Protocol::new(participants).run("C");
+    let a = Protocol::new(participants.clone()).run("A");
+    let b = Protocol::new(participants.clone()).run("B");
+    let c = Protocol::new(participants).run("C");
 
     assert!(a.values().all(|components| components.is_empty()));
     assert!(b.values().all(|components| components.is_empty()));
@@ -227,7 +227,7 @@ fn no_external_outgoing() {
 
 #[test]
 fn component_size_exceeded() {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     let participants = vec![
         Participant::new(
@@ -274,9 +274,9 @@ fn component_size_exceeded() {
         ),
     ];
 
-    let (a, _) = Protocol::new(participants.clone()).run("A");
-    let (b, _) = Protocol::new(participants.clone()).run("B");
-    let (c, _) = Protocol::new(participants).run("C");
+    let a = Protocol::new(participants.clone()).run("A");
+    let b = Protocol::new(participants.clone()).run("B");
+    let c = Protocol::new(participants).run("C");
 
     assert!(a.values().all(|components| components.is_empty()));
     assert!(b.values().all(|components| components.is_empty()));
@@ -285,7 +285,7 @@ fn component_size_exceeded() {
 
 #[test]
 fn participant_specific_component_size() {
-    let crypto = Arc::new(Crypto::new());
+    let crypto = Arc::new(Elliptic::new());
 
     let participants = vec![
         Participant::new(
@@ -332,9 +332,9 @@ fn participant_specific_component_size() {
         ),
     ];
 
-    let (a, _) = Protocol::new(participants.clone()).run("A");
-    let (b, _) = Protocol::new(participants.clone()).run("B");
-    let (c, _) = Protocol::new(participants).run("C");
+    let a = Protocol::new(participants.clone()).run("A");
+    let b = Protocol::new(participants.clone()).run("B");
+    let c = Protocol::new(participants).run("C");
 
     assert!(a["A"].is_empty() && !a["B"].is_empty() && !a["C"].is_empty());
 
