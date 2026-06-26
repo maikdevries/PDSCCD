@@ -32,7 +32,7 @@ impl Participant {
     }
 
     pub fn partition(&self, messages: Vec<Message>) -> (Vec<Message>, Vec<Message>) {
-        // [NOTE]
+        // [NOTE] Partition received messages based on whether target node has a token stored
         return messages
             .into_iter()
             .partition(|message| self.tokens.contains_key(&message.target));
@@ -41,7 +41,6 @@ impl Participant {
     pub fn compute(&mut self, targets: &HashSet<NID>) -> Vec<Component> {
         let (components, paths) = Tarjan::new(&self.graph).tarjan(targets);
 
-        // [NOTE]
         for (k, v) in paths {
             self.paths.entry(k).or_default().extend(v);
         }
@@ -50,7 +49,7 @@ impl Participant {
     }
 
     pub fn compose(&mut self, nodes: HashSet<NID>) -> Vec<Message> {
-        // [NOTE]
+        // [NOTE] Compose new mesages for each unseen target node
         return nodes
             .into_iter()
             .map(|node| {
@@ -71,13 +70,13 @@ impl Participant {
         return messages
             .into_iter()
             .fold(HashMap::new(), |mut map, message| {
-                // [NOTE]
+                // [NOTE] Forward message copy along detected paths
                 for path in self.paths.get(&message.target).into_iter().flatten() {
                     if let Some(capacity) = message.capacity.checked_sub(path.nodes.len())
                         && let Location::External(participant) =
                             self.graph.nodes[&path.target].location
                     {
-                        // [NOTE]
+                        // [NOTE] Re-randomise message token to sever linkability
                         let token = self.crypto.rerandomise(&message.token);
 
                         map.entry(participant).or_default().push(Message {
@@ -99,7 +98,7 @@ impl Participant {
     }
 
     pub fn recognise(&self, messages: Vec<Message>) -> (HashMap<NID, Component>, Vec<Message>) {
-        // [NOTE]
+        // [NOTE] Partition messages into groups based on target node
         let groups: HashMap<NID, Vec<Message>> =
             messages
                 .into_iter()
@@ -115,7 +114,7 @@ impl Participant {
             let alpha = Scalar::random(&mut rand::rng());
             let beta = Scalar::random(&mut rand::rng());
 
-            // [NOTE]
+            // [NOTE] Blind each received message token and store message in cache
             let mut cache = HashMap::with_capacity(queries.len());
             let seals: Vec<Sealed> = queries
                 .into_iter()
@@ -130,22 +129,22 @@ impl Participant {
                 })
                 .collect();
 
-            // [NOTE]
+            // [NOTE] Blind the stored token with separate blinding scalar
             let token = self.tokens.get(&node).unwrap();
             let blind = Elliptic::encode(*token) * beta;
 
-            // [NOTE]
+            // [NOTE] Interact with STTP to decrypt message tokens
             let (unsealed, blind) = self.crypto.unseal(seals, blind);
             let blind = blind * alpha;
 
-            // [NOTE]
+            // [NOTE] For each decrypted message token, check whether it's equivalent to stored token
             for unseal in unsealed {
                 let message = cache.remove(&unseal.nonce).unwrap();
 
                 if unseal.token * beta == blind {
                     let gamma = Scalar::random(&mut rand::rng());
 
-                    // [NOTE]
+                    // [NOTE] For each recognised token, interact with the STTP to decrypt node identifiers
                     let component: Component = message
                         .nodes
                         .into_iter()

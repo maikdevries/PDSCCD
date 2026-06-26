@@ -41,7 +41,7 @@ impl<'a> Tarjan<'a> {
             }
         }
 
-        // [NOTE]
+        // [NOTE] Return detected paths for original target nodes only
         return (
             self.components,
             self.paths
@@ -58,7 +58,7 @@ impl<'a> Tarjan<'a> {
         self.stack.push(v);
 
         for w in self.graph.nodes[&v].neighbours.iter() {
-            // [NOTE]
+            // [NOTE] Construct new path toward external node
             if let Location::External(_) = self.graph.nodes[w].location {
                 self.paths.entry(v).or_default().push(Path {
                     exit: v,
@@ -66,18 +66,18 @@ impl<'a> Tarjan<'a> {
                     target: *w,
                 });
 
-            // [NOTE]
+            // [NOTE] Recursively detect SCCs & paths for unvisited neighbours
             } else if !self.number.contains_key(w) {
                 self.detect(*w);
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.lowlink[w]));
 
-            // [NOTE]
+            // [NOTE] Update current lowlink if neighbour has already been visited
             } else if self.number[w] < self.number[&v] && self.stack.contains(w) {
                 self.lowlink.insert(v, self.lowlink[&v].min(self.number[w]));
             }
 
-            // [NOTE]
+            // [NOTE] Incremental path construction during backtracking
             if self.paths.contains_key(w) {
                 let paths: Vec<Path> = self.paths[w]
                     .iter()
@@ -92,7 +92,7 @@ impl<'a> Tarjan<'a> {
             }
         }
 
-        // [NOTE]
+        // [NOTE] Establish new SCC if current node is identified as root node
         if self.lowlink[&v] == self.number[&v] {
             let mut scc = HashSet::new();
 

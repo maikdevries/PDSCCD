@@ -41,40 +41,37 @@ impl Protocol {
         let participant = self
             .participants
             .get(initiator)
-            .expect("Particpant must have known ID");
+            .expect("Participant must have known ID");
 
-        // [NOTE]
+        // [NOTE] Compose seed messages to initiate protocol
         let jobs = Protocol::seed(participant);
         let mut pending = jobs.len();
 
-        // [NOTE]
         let mut components = HashMap::new();
 
-        // [NOTE]
+        // [NOTE] Spawn dedicated thread per participant
         thread::scope(|scope| {
             let mut channels = HashMap::new();
             let (sender, receiver) = mpsc::channel();
 
-            // [NOTE]
+            // [NOTE] Channels to send and receive results from threads to orchestrator
             let (r_sender, r_receiver) = mpsc::channel();
 
-            // [NOTE]
             for (id, participant) in self.participants {
                 let (tx, rx) = mpsc::channel();
                 channels.insert(id, tx);
 
-                // [NOTE]
+                // [NOTE] Clone shared channels for sending messages to orchestrator
                 let tx = sender.clone();
                 let rtx = r_sender.clone();
                 scope.spawn(move || Protocol::work(participant, rx, tx, rtx));
             }
 
-            // [NOTE]
+            // [NOTE] Send seed messages to orchestrator, which will dispatch to respective participant
             sender.send(jobs).unwrap();
 
-            // [NOTE]
+            // [NOTE] Process and dispatch messsages to respective participants as long as there is work to do
             while pending > 0 {
-                // [NOTE]
                 let jobs = receiver.recv().unwrap();
 
                 for (id, queries) in jobs {
@@ -88,6 +85,7 @@ impl Protocol {
             pending = channels.len();
             drop(channels);
 
+            // [NOTE] Collect results from each thread (participant)
             while pending > 0
                 && let Ok((id, cs)) = r_receiver.recv()
             {
@@ -106,7 +104,7 @@ impl Protocol {
                 .graph
                 .nodes
                 .values()
-                // [NOTE]
+                // [NOTE] Collect all distinct nodes with an incoming external edge
                 .fold(HashSet::new(), |mut set, node| {
                     if matches!(node.location, Location::External(_)) {
                         set.extend(&node.neighbours);
@@ -135,48 +133,47 @@ impl Protocol {
         let mut components: HashMap<NID, Component> = HashMap::new();
         let time = std::time::Instant::now();
 
-        // [NOTE]
-        for queries in receiver {
+        for messages in receiver {
             debug_println!();
             debug_println!("--- PARTICIPANT {} START ---", participant.id);
 
-            // [NOTE]
-            let (known, unknown) = participant.partition(queries);
-            debug_println!("[{}] - Known: {known:?}", participant.id);
-            debug_println!("[{}] - Unknown: {unknown:?}", participant.id);
+            // [NOTE] Partition messages into seen and unseen messages
+            let (seen, unseen) = participant.partition(messages);
+            debug_println!("[{}] - Seen: {seen:?}", participant.id);
+            debug_println!("[{}] - Unseen: {unseen:?}", participant.id);
 
-            // [NOTE]
-            let (complete, incomplete) = participant.recognise(known);
+            // [NOTE] Attempt recognition of seen messages through interaction with the STTP
+            let (complete, incomplete) = participant.recognise(seen);
             debug_println!("[{}] - Complete: {complete:?}", participant.id);
             debug_println!("[{}] - Incomplete: {incomplete:?}", participant.id);
 
-            let targets = unknown.iter().map(|message| message.target).collect();
+            let targets = unseen.iter().map(|message| message.target).collect();
 
-            // [NOTE]
-            let detected = participant.compute(&targets);
-            debug_println!("[{}] - Detected: {detected:?}", participant.id);
+            // [NOTE] Compute paths for unseen target nodes
+            let computed = participant.compute(&targets);
+            debug_println!("[{}] - Computed: {computed:?}", participant.id);
 
-            // [NOTE]
-            let registered = participant.compose(targets);
-            debug_println!("[{}] - Registered: {registered:?}", participant.id);
+            // [NOTE] Compose messages for unseen target nodes
+            let composed = participant.compose(targets);
+            debug_println!("[{}] - Composed: {composed:?}", participant.id);
 
-            // [NOTE]
-            let queries = participant.forward(
+            // [NOTE] Prepare to forward union of incomplete + unseen + composed messages to respective participants
+            let messages = participant.forward(
                 incomplete
                     .into_iter()
-                    .chain(unknown)
-                    .chain(registered)
+                    .chain(unseen)
+                    .chain(composed)
                     .collect(),
             );
-            debug_println!("[{}] - Queries: {queries:?}", participant.id);
+            debug_println!("[{}] - Messages: {messages:?}", participant.id);
 
-            // [NOTE]
+            // [NOTE] Store dedected distributed components per root node
             for (k, v) in complete {
                 components.entry(k).or_default().extend(v);
             }
 
-            // [NOTE]
-            sender.send(queries).unwrap();
+            // [NOTE] Send messages back to the orchestrator to dispatch to other participants
+            sender.send(messages).unwrap();
             debug_println!("--- PARTICIPANT {} END ---", participant.id);
         }
 

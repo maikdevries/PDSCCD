@@ -49,7 +49,7 @@ pub struct Elliptic {
 }
 
 impl Elliptic {
-    // [NOTE]
+    // [NOTE] Compute step-size based on bit-length of node identifiers
     const B: NID = NID::MAX.isqrt() + 1;
 
     pub fn new() -> Self {
@@ -66,7 +66,7 @@ impl Elliptic {
         let mut lookup = HashMap::with_capacity(Self::B as usize);
         let mut baby = RistrettoPoint::default();
 
-        // [NOTE]
+        // [NOTE] Compute baby-step phase of BSGS algorithm
         for i in 0..Self::B {
             lookup.insert(baby.compress().to_bytes(), i);
             baby += G;
@@ -107,7 +107,7 @@ impl Elliptic {
     pub fn unseal(&self, seals: Vec<Sealed>, blind: Plaintext) -> (Vec<Unsealed>, Plaintext) {
         let r = Scalar::random(&mut rand::rng());
 
-        // [NOTE]
+        // [NOTE] Decrypt and blind each message token
         let unsealed = seals
             .into_iter()
             .map(|seal| Unsealed {
@@ -116,7 +116,7 @@ impl Elliptic {
             })
             .collect();
 
-        // [NOTE]
+        // [NOTE] Blind participant's stored token with same scalar
         let blind = blind * r;
 
         return (unsealed, blind);
@@ -125,7 +125,7 @@ impl Elliptic {
     pub fn recover(&self, point: &Plaintext) -> Option<NID> {
         let mut giant = *point;
 
-        // [NOTE]
+        // [NOTE] Compute giant-step phase of BSGS algorithm
         for i in 0..=Self::B {
             if let Some(j) = self.lookup.get(&giant.compress().to_bytes()) {
                 return Some(i * Self::B + j);
