@@ -35,10 +35,10 @@ impl<'a> Tarjan<'a> {
         }
     }
 
-    pub fn detect(mut self, targets: &HashSet<NID>) -> (Vec<Component>, HashMap<NID, Vec<Path>>) {
+    pub fn tarjan(mut self, targets: &HashSet<NID>) -> (Vec<Component>, HashMap<NID, Vec<Path>>) {
         for target in targets {
             if !self.number.contains_key(target) {
-                self.strong_connect(*target);
+                self.detect(*target);
             }
         }
 
@@ -51,7 +51,7 @@ impl<'a> Tarjan<'a> {
         );
     }
 
-    fn strong_connect(&mut self, v: NID) {
+    fn detect(&mut self, v: NID) {
         self.i += 1;
         self.lowlink.insert(v, self.i);
         self.number.insert(v, self.i);
@@ -69,7 +69,7 @@ impl<'a> Tarjan<'a> {
 
             // [NOTE]
             } else if !self.number.contains_key(w) {
-                self.strong_connect(*w);
+                self.detect(*w);
                 self.lowlink
                     .insert(v, self.lowlink[&v].min(self.lowlink[w]));
 

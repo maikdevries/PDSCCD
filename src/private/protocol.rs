@@ -182,12 +182,12 @@ impl Protocol {
             *space.entry("receive").or_default() += std::mem::size_of_val(&queries[..]) as u128;
 
             // [NOTE]
-            let (known, unknown) = time!("receive", participant.receive(queries));
+            let (known, unknown) = time!("receive", participant.partition(queries));
             debug_println!("[{}] - Known: {known:?}", participant.id);
             debug_println!("[{}] - Unknown: {unknown:?}", participant.id);
 
             // [NOTE]
-            let (complete, incomplete, cs, ss) = time!("decrypt", participant.decrypt(known));
+            let (complete, incomplete, cs, ss) = time!("decrypt", participant.recognise(known));
             debug_println!("[{}] - Complete: {complete:?}", participant.id);
             debug_println!("[{}] - Incomplete: {incomplete:?}", participant.id);
 
@@ -197,13 +197,13 @@ impl Protocol {
             let targets = unknown.iter().map(|message| message.target).collect();
 
             // [NOTE]
-            let (detected, ss) = time!("detect", participant.detect(&targets));
+            let (detected, ss) = time!("detect", participant.compute(&targets));
             debug_println!("[{}] - Detected: {detected:?}", participant.id);
 
             *space.entry("detect").or_default() += ss;
 
             // [NOTE]
-            let (registered, ss) = time!("register", participant.register(targets));
+            let (registered, ss) = time!("register", participant.compose(targets));
             debug_println!("[{}] - Registered: {registered:?}", participant.id);
 
             *space.entry("register").or_default() += ss;
