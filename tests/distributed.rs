@@ -1,4 +1,4 @@
-use pcd::distributed::{
+use pdsccd::distributed::{
     core::{Graph, Location, Node, Participant},
     protocol::Protocol,
 };
